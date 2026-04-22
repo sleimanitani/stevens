@@ -1,0 +1,27 @@
+# Security Agent capability policy.
+#
+# Version-controlled file: who can invoke what capability, against which
+# accounts, within which constraints. Default deny — every effective allow
+# must be explicit. An empty policy means "nothing is allowed." Fail-closed.
+#
+# Edits to this file take effect on Security Agent restart.
+#
+# Schema:
+#
+#   agents:
+#     - name: <snake_case agent name — matches caller field in requests>
+#       allow:
+#         - capability: <namespace.name>
+#           accounts: ["<pattern>", ...]    # optional; fnmatch globs.
+#                                           # If present, request params.account_id
+#                                           # must match one. If absent, the
+#                                           # capability is not account-scoped.
+#           constraints:                    # optional; parsed but not
+#             max_tokens_per_day: 200000    # enforced until step 6.
+#       deny:                               # optional; denies override allows.
+#         - <capability>
+#         - <capability>
+#
+# Populated with real rules in step 6 when capabilities exist.
+
+agents: []

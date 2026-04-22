@@ -1,12 +1,20 @@
 [project]
 name = "shared"
 version = "0.1.0"
-description = "Shared schemas, bus, and DB helpers"
+description = "Shared schemas, bus, DB helpers, canonical encoder, and Security Agent client"
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.6",
     "psycopg[binary,pool]>=3.1",
     "python-dotenv>=1.0",
+    "msgpack>=1.0",
+    "pynacl>=1.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
 ]
 
 [build-system]

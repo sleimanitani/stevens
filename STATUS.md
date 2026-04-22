@@ -19,10 +19,11 @@
 | 2026-04-22 | `3237c62` | `v0.1-sec` step 5 — Audit writer (JSONL, daily rollover, asyncio-locked, sensitive-param hashing, file mode 0o600); 82/82 tests pass |
 | 2026-04-22 | `d23a2a4` | `v0.1-sec` step 6 — Capability registry + `ping` + dispatch orchestration; first end-to-end through UDS works; 101/101 tests pass |
 | 2026-04-22 | `5bb044a` | `v0.1-sec` step 7 — Docker + compose + `__main__` entrypoint + dev keypair gen; security service isolated (`network_mode: none`); Docker build declared manual |
+| 2026-04-22 | *(step 8 commit)* | `v0.1-sec` step 8 — `shared.security_client` library + canonical encoder moved to `shared/`; 108/108 tests pass |
 
 ## Up next
 
-[`plans/v0.1-sec.md` step 8](plans/v0.1-sec.md#step-8--sharedsecurity_client-library-) — `shared.security_client` library for agent-side use.
+Sealed secret store (libsodium secretbox, passphrase-unlocked root key) — steps 9–12 of the milestone, previously outlined. Detailed sub-steps will be added to the plan as they start.
 
 ## Blockers
 

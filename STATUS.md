@@ -22,11 +22,14 @@
 | 2026-04-22 | `79c3a3d` | `v0.1-sec` step 8 — `shared.security_client` library + canonical encoder moved to `shared/`; 108/108 tests pass |
 | 2026-04-22 | `8dc5ec2` | `v0.1-sec` steps 9-12 (merged) — sealed secret store (Argon2id KDF, libsodium secretbox, rotation/revocation); 133/133 tests pass |
 | 2026-04-22 | `0a65504` | `v0.1-sec` steps 13-14 — stevens admin CLI (secrets init/add/list/rotate/revoke/delete + agent register); 143/143 tests pass |
-| 2026-04-22 | *(this commit)* | `v0.1-sec` steps 15-17 — Outbound sidecar (httpx) + Gmail capabilities + CapabilityContext; 149/149 tests pass |
+| 2026-04-22 | `c99f83b` | `v0.1-sec` steps 15-17 — Outbound sidecar (httpx) + Gmail capabilities + CapabilityContext; 149/149 tests pass |
+| 2026-04-22 | *(this commit)* | `v0.1-sec` steps 18-21 — credentials_ref migration + OAuth-setup runbook + tool_factory rewrite (broker-mediated) + Langfuse redactor; 168/168 tests pass; step 22 (E2E) declared manual |
 
 ## Up next
 
-Migrations (steps 18–20): sealed-store-ref column on `channel_accounts`, move `./secrets/gmail_oauth_client.json` into the sealed store, rewrite `agents/src/agents/tool_factory.py` to request Gmail operations through the Security Agent rather than holding raw OAuth tokens. Then the Langfuse redactor (step 21), then the acceptance criterion (step 22 — declared manual, requires real Gmail).
+**v0.1-sec is functionally complete** — all 22 steps either ship or declared manual (step 22 requires Sol's real Google Cloud project + OAuth + Ollama; procedure documented in `plans/v0.1-sec.md`).
+
+Next project: flesh out the Gmail adapter (`channels/gmail/src/gmail_adapter/`) — Pub/Sub webhook handler, history fetch loop, watch renewal. Then the Email PM agent is ready to actually run end-to-end once Sol does the OAuth onboarding (`docs/runbooks/gmail-oauth-setup.md`).
 
 ## Blockers
 

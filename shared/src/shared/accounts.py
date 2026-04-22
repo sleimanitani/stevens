@@ -20,11 +20,23 @@ class ChannelAccount(BaseModel):
     account_id: str
     channel_type: ChannelType
     display_name: str
-    credentials: dict[str, Any]
+    # Legacy credentials JSONB — deprecated. New accounts should set
+    # credentials_ref instead; see resources/migrations/002_credentials_ref.sql
+    # and STEVENS.md §3.10. Kept for transition.
+    credentials: dict[str, Any] = Field(default_factory=dict)
+    # Opaque sealed-store secret name. When present, callers must request
+    # operations on this account through the Security Agent (they cannot
+    # read the underlying secret). See v0.1-sec in plans/.
+    credentials_ref: Optional[str] = None
     status: AccountStatus = "active"
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    @property
+    def uses_sealed_store(self) -> bool:
+        """True once this account's secrets have moved to the sealed store."""
+        return self.credentials_ref is not None
 
 
 async def get_account(conn, account_id: str) -> Optional[ChannelAccount]:

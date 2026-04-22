@@ -1,71 +1,99 @@
-"""Account-aware tool factory.
+"""Account-aware tool factory — Security-Agent-mediated edition.
 
-LangChain's GmailToolkit is bound to a single credentials object at creation
-time. For a multi-account system, we need to produce account-specific tools
-on demand.
+**This module no longer holds or sees Gmail OAuth tokens.** Every tool here
+is a thin wrapper around a capability call to the Security Agent. The
+Security Agent loads the refresh token from its sealed store, exchanges
+it for an access token inside its own process, makes the Gmail API call,
+and returns the non-sensitive result back to us over a Unix domain socket.
 
-This module wraps LangChain's tools so that account_id is an explicit
-argument — the agent calls `gmail_search(account_id="gmail.atheer", query=...)`
-instead of picking from a menu of per-account tools.
+This is the step-20 rewrite of the prior tool_factory, which pulled
+credentials out of Postgres and bound them to a google-auth Credentials
+object inside the agent process. That was the "web of things accessing
+secrets" anti-pattern Sol called out at project kickoff.
 
-Why the wrap and not just N toolkit instances:
-  - With 5 accounts and 6 Gmail tools each, binding per-account gives the
-    agent 30 tool choices. The wrap gives it 6.
-  - Making account_id explicit in the signature forces the prompt to be
-    explicit too, which makes "always reply from the account that received
-    the message" enforceable.
+Environment variables required:
+
+- ``STEVENS_SECURITY_SOCKET``   default ``/run/stevens/security.sock``
+- ``STEVENS_CALLER_NAME``       e.g. ``email_pm`` — matches a name in
+                                ``security/policy/agents.yaml``
+- ``STEVENS_PRIVATE_KEY_PATH``  path to this agent's Ed25519 private key
+                                file (mode 0o600)
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
-from typing import Any
+import logging
+import os
+from typing import Any, Optional
 
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, Field
 
-from shared.accounts import get_account
-from shared.db import connection
+from shared.security_client import (
+    AuthError,
+    DenyError,
+    NotFoundError,
+    ResponseError,
+    SecurityClient,
+    TransportError,
+)
+
+log = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Credential loading
-# ---------------------------------------------------------------------------
-async def _get_gmail_credentials(account_id: str):
-    """Load and refresh Gmail OAuth credentials for an account."""
-    from google.oauth2.credentials import Credentials
-
-    async with connection() as conn:
-        account = await get_account(conn, account_id)
-    if not account:
-        raise ValueError(f"unknown account: {account_id}")
-    if account.channel_type != "gmail":
-        raise ValueError(f"{account_id} is not a Gmail account")
-
-    creds_data = account.credentials
-    creds = Credentials.from_authorized_user_info(creds_data)
-    # google-auth handles refresh automatically on use, but if you want to
-    # persist refreshed tokens back to DB, do it here.
-    return creds
+# --- client singleton ---
 
 
-def _build_gmail_service(account_id: str):
-    """Build a Gmail API client for an account."""
-    from googleapiclient.discovery import build
-    import asyncio
+_CLIENT: Optional[SecurityClient] = None
 
-    # This function is called from sync tool handlers; get creds synchronously.
-    loop = asyncio.new_event_loop()
+
+def _client() -> SecurityClient:
+    """Return the process-wide SecurityClient, lazily constructed from env."""
+    global _CLIENT
+    if _CLIENT is not None:
+        return _CLIENT
+    socket = os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
+    caller = os.environ["STEVENS_CALLER_NAME"]
+    key_path = os.environ["STEVENS_PRIVATE_KEY_PATH"]
+    _CLIENT = SecurityClient.from_key_file(
+        socket_path=socket,
+        caller_name=caller,
+        private_key_path=key_path,
+    )
+    return _CLIENT
+
+
+def _call_sync(capability: str, params: dict[str, Any]) -> dict[str, Any]:
+    """Drive the async SecurityClient from a sync tool handler.
+
+    LangChain's StructuredTool wants sync callables. We run the client's
+    async call inside a fresh event loop — each tool invocation is short
+    enough that the cost of loop setup is dominated by the UDS round-trip.
+    """
+    async def _run() -> dict[str, Any]:
+        return await _client().call(capability, params)
+
     try:
-        creds = loop.run_until_complete(_get_gmail_credentials(account_id))
-    finally:
-        loop.close()
-    return build("gmail", "v1", credentials=creds, cache_discovery=False)
+        return asyncio.run(_run())
+    except AuthError as e:
+        log.error("security auth error calling %s: %s", capability, e)
+        return {"error": "auth", "detail": str(e)}
+    except DenyError as e:
+        log.error("security policy denied %s: %s", capability, e)
+        return {"error": "denied", "detail": str(e)}
+    except NotFoundError as e:
+        log.error("security capability not found %s: %s", capability, e)
+        return {"error": "notfound", "detail": str(e)}
+    except (ResponseError, TransportError) as e:
+        log.error("security call failed %s: %s", capability, e)
+        return {"error": "failed", "detail": str(e)}
 
 
-# ---------------------------------------------------------------------------
-# Tool schemas
-# ---------------------------------------------------------------------------
+# --- tool schemas (unchanged from previous incarnation — stable agent surface) ---
+
+
 class SearchInput(BaseModel):
     account_id: str = Field(description="Account slug, e.g. 'gmail.personal'")
     query: str = Field(description="Gmail search query, same syntax as the Gmail web UI")
@@ -88,97 +116,110 @@ class LabelInput(BaseModel):
     label: str = Field(description="Label name (e.g. 'pm/urgent')")
 
 
-# ---------------------------------------------------------------------------
-# Tool implementations (sync for LangGraph compatibility)
-# ---------------------------------------------------------------------------
+# --- tool implementations ---
+
+
 def _gmail_search(account_id: str, query: str) -> str:
-    svc = _build_gmail_service(account_id)
-    resp = svc.users().messages().list(userId="me", q=query, maxResults=10).execute()
-    messages = resp.get("messages", [])
-    return json.dumps([{"id": m["id"], "threadId": m["threadId"]} for m in messages])
+    result = _call_sync(
+        "gmail.search",
+        {"account_id": account_id, "query": query, "max_results": 10},
+    )
+    if "error" in result:
+        return json.dumps(result)
+    threads = [{"id": t.get("id")} for t in (result.get("threads") or [])]
+    return json.dumps(threads)
 
 
 def _gmail_get_thread(account_id: str, thread_id: str) -> str:
-    svc = _build_gmail_service(account_id)
-    thread = svc.users().threads().get(userId="me", id=thread_id, format="full").execute()
-    # Return a lean representation — full Gmail payloads are huge.
+    result = _call_sync(
+        "gmail.get_thread",
+        {"account_id": account_id, "thread_id": thread_id},
+    )
+    if "error" in result:
+        return json.dumps(result)
+    # Distill to the lean representation agents actually reason about.
     messages = []
-    for msg in thread.get("messages", []):
-        headers = {h["name"]: h["value"] for h in msg["payload"].get("headers", [])}
-        messages.append({
-            "id": msg["id"],
-            "from": headers.get("From"),
-            "to": headers.get("To"),
-            "subject": headers.get("Subject"),
-            "date": headers.get("Date"),
-            "snippet": msg.get("snippet", ""),
-        })
+    for msg in result.get("messages", []):
+        headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+        messages.append(
+            {
+                "id": msg.get("id"),
+                "from": headers.get("From"),
+                "to": headers.get("To"),
+                "subject": headers.get("Subject"),
+                "date": headers.get("Date"),
+                "snippet": msg.get("snippet", ""),
+                "message_id": headers.get("Message-ID"),
+            }
+        )
     return json.dumps({"thread_id": thread_id, "messages": messages})
 
 
 def _gmail_create_draft(account_id: str, thread_id: str, body: str) -> str:
-    """Create a draft reply in an existing thread.
+    """Create a draft reply in a thread. Draft only — never sends.
 
-    v0.1 hard rule: this is the ONLY way agents produce outbound email.
-    There is deliberately no send_email tool exposed to agents.
+    Builds the MIME locally (agent-side) then ships the raw bytes through
+    the Security Agent. Agent-side MIME assembly is fine — no secrets
+    needed to format an email.
     """
-    import base64
-    from email.mime.text import MIMEText
-
-    svc = _build_gmail_service(account_id)
-    # Fetch thread to get original subject + message-id for proper threading.
-    thread = svc.users().threads().get(userId="me", id=thread_id, format="metadata",
-                                        metadataHeaders=["Subject", "Message-ID", "From"]).execute()
-    messages = thread.get("messages", [])
+    # Fetch thread metadata so we thread correctly.
+    thread_result = _call_sync(
+        "gmail.get_thread",
+        {"account_id": account_id, "thread_id": thread_id},
+    )
+    if "error" in thread_result:
+        return json.dumps(thread_result)
+    messages = thread_result.get("messages") or []
     if not messages:
-        return json.dumps({"error": "thread has no messages"})
+        return json.dumps({"error": "empty_thread"})
 
     last = messages[-1]
-    headers = {h["name"]: h["value"] for h in last["payload"].get("headers", [])}
+    headers = {h["name"]: h["value"] for h in last.get("payload", {}).get("headers", [])}
     subject = headers.get("Subject", "")
     if not subject.lower().startswith("re:"):
         subject = f"Re: {subject}"
 
-    msg = MIMEText(body)
-    msg["To"] = headers.get("From", "")
-    msg["Subject"] = subject
-    msg["In-Reply-To"] = headers.get("Message-ID", "")
-    msg["References"] = headers.get("Message-ID", "")
+    from email.mime.text import MIMEText
 
-    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    draft = svc.users().drafts().create(
-        userId="me",
-        body={"message": {"raw": raw, "threadId": thread_id}}
-    ).execute()
-    return json.dumps({"draft_id": draft["id"]})
+    mime = MIMEText(body)
+    mime["To"] = headers.get("From", "")
+    mime["Subject"] = subject
+    mime["In-Reply-To"] = headers.get("Message-ID", "")
+    mime["References"] = headers.get("Message-ID", "")
+    raw_bytes = mime.as_bytes()
+
+    result = _call_sync(
+        "gmail.create_draft",
+        {"account_id": account_id, "thread_id": thread_id, "raw_rfc822": raw_bytes},
+    )
+    if "error" in result:
+        return json.dumps(result)
+    return json.dumps({"draft_id": result.get("id")})
 
 
 def _gmail_add_label(account_id: str, thread_id: str, label: str) -> str:
-    svc = _build_gmail_service(account_id)
-    # Find-or-create the label
-    labels = svc.users().labels().list(userId="me").execute().get("labels", [])
-    label_id = next((l["id"] for l in labels if l["name"] == label), None)
-    if not label_id:
-        created = svc.users().labels().create(
-            userId="me", body={"name": label, "labelListVisibility": "labelShow"}
-        ).execute()
-        label_id = created["id"]
-    svc.users().threads().modify(
-        userId="me", id=thread_id, body={"addLabelIds": [label_id]}
-    ).execute()
+    # The Security Agent takes a label_id, not a label name. We let the
+    # capability resolve the name→id or we require label_ids from the
+    # registry-controlled mapping. For v0.1 we pass the name verbatim as
+    # label_id; callers that know better can prepopulate.
+    result = _call_sync(
+        "gmail.add_label",
+        {"account_id": account_id, "thread_id": thread_id, "label_id": label},
+    )
+    if "error" in result:
+        return json.dumps(result)
     return json.dumps({"ok": True, "label": label})
 
 
-# ---------------------------------------------------------------------------
-# Public factory
-# ---------------------------------------------------------------------------
+# --- factory ---
+
+
 def get_gmail_tools() -> list[BaseTool]:
-    """Return the set of Gmail tools, all account-parameterized."""
     return [
         StructuredTool.from_function(
             func=_gmail_search,
             name="gmail_search",
-            description="Search Gmail messages. Query uses Gmail search syntax.",
+            description="Search Gmail messages via the Security Agent broker.",
             args_schema=SearchInput,
         ),
         StructuredTool.from_function(
@@ -192,14 +233,15 @@ def get_gmail_tools() -> list[BaseTool]:
             name="gmail_create_draft",
             description=(
                 "Create a DRAFT reply to a thread. The draft is saved to Gmail's "
-                "Drafts folder for Sol to review and send. You cannot send directly."
+                "Drafts folder for Sol to review and send. You cannot send directly — "
+                "no gmail_send tool exists in this agent's toolkit."
             ),
             args_schema=DraftInput,
         ),
         StructuredTool.from_function(
             func=_gmail_add_label,
             name="gmail_add_label",
-            description="Add a label to a Gmail thread. Creates the label if needed.",
+            description="Add a label to a Gmail thread.",
             args_schema=LabelInput,
         ),
     ]

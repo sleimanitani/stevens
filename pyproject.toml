@@ -1,0 +1,13 @@
+[project]
+name = "assistant"
+version = "0.1.0"
+description = "Personal multi-agent assistant"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = ["shared", "channels/gmail", "agents"]
+
+[tool.uv.sources]
+shared = { workspace = true }
+gmail-adapter = { workspace = true }
+agents = { workspace = true }

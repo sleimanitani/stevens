@@ -1,0 +1,32 @@
+# registry.yaml
+#
+# Declares every agent the runtime should start. Adding an agent = adding an
+# entry here + writing the agent module. Removing an agent = removing the entry
+# (the module can stay).
+#
+# Each entry:
+#   name:          unique name, matches module path under agents.<name>
+#   subscribes:    list of topic patterns (NATS-style wildcards)
+#   schedule:      optional cron-like string (e.g. "0 8 * * *" for daily 8am)
+#   accounts:      "all" | [list of allowed account_ids] — enforced by runtime
+#   model:         logical model name (currently just "local" — one option)
+#   enabled:       bool, default true
+
+agents:
+  - name: email_pm
+    subscribes:
+      - "email.received.*"
+    schedule: "0 8 * * *"    # daily 8am local, for overdue followup review
+    accounts: "all"
+    model: local
+    enabled: true
+
+  # Future agents go here:
+  #
+  # - name: berwyn_deal
+  #   subscribes:
+  #     - "email.received.gmail.personal"
+  #     - "whatsapp.message.received.wa.us"
+  #   accounts: "all"
+  #   model: local
+  #   enabled: true

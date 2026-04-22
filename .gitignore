@@ -1,0 +1,36 @@
+# Secrets
+.env
+secrets/
+whatsapp-auth/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.uv-cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+dist/
+.npm/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Postgres
+pgdata/
+
+# Logs
+*.log
+
+# Docs (large binary — track explicitly if wanted)
+# docs/*.docx
+# docs/*.pdf

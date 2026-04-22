@@ -16,10 +16,11 @@
 | 2026-04-22 | `e19a6b1` | `v0.1-sec` step 2 — UDS server shell + msgpack framing; 18/18 tests pass |
 | 2026-04-22 | `6aa443f` | `v0.1-sec` step 3 — Ed25519 identity + canonical msgpack + nonce replay; 49/49 tests pass; protocol doc `docs/protocols/security-agent.md` shipped |
 | 2026-04-22 | `47daeef` | `v0.1-sec` step 4 — Policy loader + evaluator (default-deny, account-scope wildcards, deny-overrides-allow); 69/69 tests pass |
+| 2026-04-22 | *(this commit)* | `v0.1-sec` step 5 — Audit writer (JSONL, daily rollover, asyncio-locked, sensitive-param hashing, file mode 0o600); 82/82 tests pass |
 
 ## Up next
 
-[`plans/v0.1-sec.md` step 5](plans/v0.1-sec.md#step-5--audit-writer-) — Audit writer (append-only JSONL, daily rollover, sensitive param hashing).
+[`plans/v0.1-sec.md` step 6](plans/v0.1-sec.md#step-6--capability-registry--ping-stub-) — Capability registry + `ping` stub (first end-to-end capability: identity → policy → capability → audit).
 
 ## Blockers
 

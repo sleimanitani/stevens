@@ -102,5 +102,37 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       GMAIL_ADAPTER_URL: http://gmail-adapter:8080
       WHATSAPP_ADAPTER_URL: http://whatsapp-adapter:8081
+      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+    volumes:
+      - stevens-sock:/run/stevens:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  security:
+    build:
+      context: .
+      dockerfile: security/Dockerfile
+    restart: unless-stopped
+    environment:
+      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+      STEVENS_SECURITY_AUDIT_DIR: /var/lib/stevens/audit
+      STEVENS_SECURITY_SECRETS: /var/lib/stevens/secrets
+      STEVENS_LOG_LEVEL: ${STEVENS_LOG_LEVEL:-INFO}
+    volumes:
+      # Socket surface — agents mount this read-only. Only the security
+      # container writes into /run/stevens (the socket file itself).
+      - stevens-sock:/run/stevens
+      - stevens-audit:/var/lib/stevens/audit
+      - stevens-secrets:/var/lib/stevens/secrets
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/stevens
+    # No network access — UDS only. Prevents a compromised Security Agent
+    # from dialing outbound on its own.
+    network_mode: none
+
+volumes:
+  stevens-sock:
+  stevens-audit:
+  stevens-secrets:

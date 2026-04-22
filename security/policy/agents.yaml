@@ -1,0 +1,21 @@
+# Security Agent registry of authorized callers.
+#
+# Each entry binds a caller name to a single Ed25519 public key. Requests
+# must present a "caller" field matching one of these names and a "sig"
+# field that verifies against the corresponding pubkey (over the canonical
+# encoding of the envelope — see docs/protocols/security-agent.md).
+#
+# Keypairs are generated per-install on first boot (see STEVENS.md §3.5).
+# Sol registers a new agent by running:
+#     stevens agent register <name>
+# which appends the pubkey below after prompting for confirmation.
+#
+# Schema:
+#   agents:
+#     - name: <snake_case agent name, matches the caller field>
+#       pubkey_b64: <base64-encoded 32-byte Ed25519 public key>
+#
+# Empty registry means the Security Agent starts but rejects all callers —
+# fail closed.
+
+agents: []

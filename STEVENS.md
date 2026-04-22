@@ -247,7 +247,12 @@ The loop:
 
 If execution reveals the plan was wrong, *stop and revise the plan* before continuing. Do not silently deviate.
 
-### 5.3 Other disciplines
+### 5.3 Versions locked
+
+- **Python 3.10+** across all workspace members. Supersedes PRD's `>=3.12` (which was default-to-latest, not a real requirement — nothing we're doing in v0.x needs a 3.11+ feature). Revisit when a specific 3.11+ feature is worth the bump.
+- **Project venv:** `./.venv/` managed by `uv`. No raw `python3`, no system-site-packages.
+
+### 5.4 Other disciplines
 
 - **Small commits, main stays green.** Every change is a full plan → implement → test → commit loop.
 - **Reuse-first.** New tool/helper/agent requires a pointer to the closest existing thing and a one-line reason it doesn't fit.

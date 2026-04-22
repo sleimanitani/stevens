@@ -40,6 +40,16 @@ See `STEVENS.md` §3 for full detail. At a minimum:
 - No secret material in git, in logs, in LLM prompts, in Langfuse traces. Ever. If you catch yourself writing one, stop.
 - Email/WhatsApp/any inbound content is **untrusted** for prompt-injection. Do not let it flow into prompts that grant tool access without the content-tagger redaction described in §3.8.
 
+## Python environment
+
+**Always use a venv.** Never run or install against the system Python. For Stevens, the project-local venv is `./.venv/` managed by `uv` — every Python invocation goes through `uv run …` from the repo root. Tests, scripts, CLIs, all of them.
+
+Other venvs on this machine (as of 2026-04-22) are not compatible with Stevens — Python 3.10 vs our 3.12 requirement:
+- `~/torch-eng/` — Sol's ML/3090 workspace (torch 2.5.1+cu121). Leave alone.
+- `~/.venvs/jupyter/` — general Jupyter kernel. Leave alone.
+
+If a task genuinely needs to share another venv (rare), ask Sol first.
+
 ## Commits
 
 - Small and focused. `main` stays green.

@@ -12,10 +12,11 @@
 |---|---|---|
 | 2026-04-22 | `c8fd584` | v0.0 baseline — existing scaffolding + STEVENS.md charter + locked security decisions |
 | 2026-04-22 | `8172da9` | Plan/status discipline + `v0.1-sec` build plan laid down |
+| 2026-04-22 | *(this commit)* | `v0.1-sec` step 1 — `security/` package scaffolding; smoke tests pass; dropped to Python 3.10 |
 
 ## Up next
 
-[`plans/v0.1-sec.md` step 1](plans/v0.1-sec.md#step-1--security-package-scaffolding-) — `security/` package scaffolding.
+[`plans/v0.1-sec.md` step 2](plans/v0.1-sec.md#step-2--uds-server-shell--msgpack-framing-) — UDS server shell + msgpack framing.
 
 ## Blockers
 

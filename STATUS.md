@@ -11,7 +11,7 @@
 | Date | Commit | What |
 |---|---|---|
 | 2026-04-22 | `c8fd584` | v0.0 baseline — existing scaffolding + STEVENS.md charter + locked security decisions |
-| 2026-04-22 | *(this commit)* | Plan/status discipline + `v0.1-sec` build plan laid down |
+| 2026-04-22 | `8172da9` | Plan/status discipline + `v0.1-sec` build plan laid down |
 
 ## Up next
 

@@ -220,11 +220,40 @@ Load-bearing enough to deserve its own charter doc (`MEMORY.md`). To cover: shor
 
 ## 5. How we work
 
-- **Small commits, main stays green.** Every change is plan → implement → test → commit.
+### 5.1 Document tiers
+
+Three levels of living documentation. Future sessions pick up from these alone — no repo spelunking or chat replay required.
+
+| Tier | File(s) | Purpose | Update cadence |
+|---|---|---|---|
+| **Charter** | `STEVENS.md`, `docs/prd.docx` | Principles, architecture, locked decisions | Rarely; changes need discussion |
+| **Build Plan** | `plans/<milestone>.md` | Detailed steps + test plan per step + inline progress markers + protocol contracts for the milestone | Continuously during milestone; archived when milestone ships |
+| **Status** | `STATUS.md` | One-page snapshot: active milestone, last step shipped, next step up, blockers, open decisions | Every commit |
+| **Protocol** (supporting) | `docs/protocols/*.md` | Stable RPC / event / API contracts between components | On contract change, versioned |
+
+Startup ritual (baked into `CLAUDE.md`): read **STATUS → active Build Plan → relevant protocol doc → Charter only if needed**. Never start by reading the whole repo.
+
+### 5.2 Plan-before / plan-after (the core workflow rule)
+
+**Every workflow begins and ends by updating the plan.** This is the rule Sol set explicitly and the one that makes the rest of the system legible across sessions.
+
+The loop:
+
+1. **Open.** State the goal. Read the active Build Plan. If the plan doesn't cover this work or the step needs refinement, *update the plan first* and commit that update before implementing.
+2. **Mark in-progress.** Flip the step from `[ ]` to `[~]` in the Build Plan.
+3. **Execute.** Smallest viable diff, following the step's own test plan.
+4. **Test.** Run the planned tests. If a test can't be meaningfully run, say so explicitly and document the manual verification used.
+5. **Close.** Flip `[~]` to `[x]` with the commit hash. Record outcomes (what shipped, deviations, surprises). Update `STATUS.md`. Plan + status updates go in the same commit as the code (or an immediate `plan:` follow-up).
+
+If execution reveals the plan was wrong, *stop and revise the plan* before continuing. Do not silently deviate.
+
+### 5.3 Other disciplines
+
+- **Small commits, main stays green.** Every change is a full plan → implement → test → commit loop.
 - **Reuse-first.** New tool/helper/agent requires a pointer to the closest existing thing and a one-line reason it doesn't fit.
 - **Security gate.** Any change that adds network egress, widens the trust boundary, introduces new persistence, or touches secret handling stops and confirms with Sol before merging.
 - **Test or declare.** If a change can't be meaningfully tested, say so explicitly and add observability (Langfuse trace, audit entry) to compensate.
-- **Iteration with Claude Code.** Use memory (`MEMORY.md`) to carry decisions across sessions. Use this document as the playbook each session opens with.
+- **Memory.** Claude's MEMORY system carries decisions and working-contract rules across sessions. These plan docs carry project state across sessions. The two are complementary: memory is Claude's, plan docs are the team's.
 
 ---
 

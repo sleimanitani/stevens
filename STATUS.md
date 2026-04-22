@@ -13,10 +13,11 @@
 | 2026-04-22 | `c8fd584` | v0.0 baseline — existing scaffolding + STEVENS.md charter + locked security decisions |
 | 2026-04-22 | `8172da9` | Plan/status discipline + `v0.1-sec` build plan laid down |
 | 2026-04-22 | `18e3ded` | `v0.1-sec` step 1 — `security/` package scaffolding; smoke tests pass; dropped to Python 3.10 |
+| 2026-04-22 | *(this commit)* | `v0.1-sec` step 2 — UDS server shell + msgpack framing; 18/18 tests pass |
 
 ## Up next
 
-[`plans/v0.1-sec.md` step 2](plans/v0.1-sec.md#step-2--uds-server-shell--msgpack-framing-) — UDS server shell + msgpack framing.
+[`plans/v0.1-sec.md` step 3](plans/v0.1-sec.md#step-3--identity-module-ed25519-verification-) — Identity module (Ed25519 verification + canonical msgpack encoder + agent pubkey registry).
 
 ## Blockers
 

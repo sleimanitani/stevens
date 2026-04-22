@@ -59,8 +59,3 @@ None active.
 
 - Charter-level security decisions locked 2026-04-22 — see `STEVENS.md` §3.11.
 - Open architectural/memory questions tracked in `STEVENS.md` §7 — not blocking current work.
-
-## Housekeeping (non-blocking)
-
-- Local git `user.email` unset; currently passed as `git -c user.email=s@y76.io ...` per commit. Sol can set permanently whenever.
-- `assistant_prd_trd.docx` (repo root) and `docs/prd.docx` appear to duplicate. Dedupe when convenient.

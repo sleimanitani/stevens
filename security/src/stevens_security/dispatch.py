@@ -25,6 +25,7 @@ from typing import Any, Dict, Optional
 
 from .audit import AuditEntry, AuditWriter, hash_param
 from .capabilities.registry import CapabilityRegistry
+from .context import CapabilityContext
 from .identity import AuthError, NonceCache, RegisteredAgent, verify_request
 from .policy import Policy, evaluate
 from .server import Dispatcher
@@ -37,8 +38,11 @@ def build_dispatcher(
     audit_writer: AuditWriter,
     capability_registry: CapabilityRegistry,
     nonce_cache: NonceCache,
+    context: Optional[CapabilityContext] = None,
 ) -> Dispatcher:
     """Return an async dispatch function with all dependencies bound."""
+
+    effective_context = context or CapabilityContext()
 
     async def dispatch(req: Dict[str, Any]) -> Dict[str, Any]:
         t0 = time.monotonic()
@@ -105,7 +109,7 @@ def build_dispatcher(
 
         # --- 4. Handler exec ---
         try:
-            result = await spec.handler(agent, params)
+            result = await spec.invoke(agent, params, effective_context)
         except Exception as e:  # noqa: BLE001
             await audit_writer.log(
                 AuditEntry(

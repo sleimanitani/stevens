@@ -77,11 +77,37 @@ class WhatsAppMessageEvent(BaseEvent):
         return f"whatsapp.message.received.{self.account_id}"
 
 
+class CalendarEventChangedEvent(BaseEvent):
+    """Emitted when a Google Calendar push arrives and we sync in changes.
+
+    One of these per changed event. When Google just says "sync" with no
+    specific event change, the adapter walks ``events.list`` with the
+    last ``syncToken`` and emits one of these per result.
+    """
+
+    source: Literal["calendar"] = "calendar"
+    calendar_id: str
+    gcal_event_id: str
+    status: str = "confirmed"  # "confirmed" | "tentative" | "cancelled"
+    summary: str = ""
+    start: Optional[str] = None  # ISO 8601, or all-day YYYY-MM-DD
+    end: Optional[str] = None
+    organizer: Optional[str] = None
+    attendees: list[str] = Field(default_factory=list)
+    html_link: Optional[str] = None
+    raw_ref: str
+
+    @property
+    def topic(self) -> str:
+        return f"calendar.event.changed.{self.account_id}"
+
+
 # Registry of all known event types, keyed by topic pattern prefix.
 # Used by the bus to deserialize events into the right Pydantic model.
 EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "email.received": EmailReceivedEvent,
     "whatsapp.message.received": WhatsAppMessageEvent,
+    "calendar.event.changed": CalendarEventChangedEvent,
 }
 
 

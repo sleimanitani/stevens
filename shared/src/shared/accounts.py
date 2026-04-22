@@ -12,7 +12,7 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 
-ChannelType = Literal["gmail", "whatsapp", "calendar"]
+ChannelType = Literal["gmail", "whatsapp", "whatsapp_cloud", "calendar"]
 AccountStatus = Literal["active", "paused", "broken"]
 
 

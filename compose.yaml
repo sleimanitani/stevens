@@ -85,6 +85,45 @@ services:
       # Tailnet-only, never funneled publicly
       - "127.0.0.1:8081:8081"
 
+  whatsapp-cloud-adapter:
+    build:
+      context: .
+      dockerfile: channels/whatsapp-cloud/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+      STEVENS_CALLER_NAME: whatsapp_cloud_adapter
+      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/whatsapp_cloud_adapter.key
+    volumes:
+      - stevens-sock:/run/stevens:ro
+    ports:
+      # Only bound to localhost. Funnel-exposed externally for Meta's webhook.
+      - "127.0.0.1:8082:8082"
+
+  calendar-adapter:
+    build:
+      context: .
+      dockerfile: channels/calendar/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+      STEVENS_CALLER_NAME: calendar_adapter
+      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/calendar_adapter.key
+    volumes:
+      - stevens-sock:/run/stevens:ro
+    ports:
+      - "127.0.0.1:8083:8083"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   agents:
     build:
       context: .

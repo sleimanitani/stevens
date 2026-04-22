@@ -9,10 +9,12 @@ addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 
 [tool.uv.workspace]
-members = ["shared", "channels/gmail", "agents", "security"]
+members = ["shared", "channels/gmail", "channels/whatsapp-cloud", "channels/calendar", "agents", "security"]
 
 [tool.uv.sources]
 shared = { workspace = true }
 gmail-adapter = { workspace = true }
+whatsapp-cloud-adapter = { workspace = true }
+calendar-adapter = { workspace = true }
 agents = { workspace = true }
 stevens-security = { workspace = true }

@@ -25,6 +25,7 @@
 | 2026-04-22 | `c99f83b` | `v0.1-sec` steps 15-17 — Outbound sidecar (httpx) + Gmail capabilities + CapabilityContext; 149/149 tests pass |
 | 2026-04-22 | `802bebe` | `v0.1-sec` steps 18-21 — credentials_ref migration + OAuth-setup runbook + tool_factory rewrite (broker-mediated) + Langfuse redactor; 168/168 tests pass; step 22 (E2E) declared manual |
 | 2026-04-22 | `935c115` | Gmail adapter — real `add_account` OAuth flow, real `/gmail/push` handler (broker-mediated), real `watch_renew`; added `gmail.list_history`, `gmail.get_message`, `gmail.watch`, `gmail.get_profile` capabilities; 168/168 tests pass |
+| 2026-04-23 | *(this commit)* | WhatsApp Cloud API adapter + Google Calendar adapter — both broker-mediated, same pattern as Gmail; migration 003 adds `whatsapp_cloud` channel_type; new `CalendarEventChangedEvent` schema; 184/184 tests pass |
 
 ## Up next
 
@@ -38,10 +39,14 @@ Remaining before first real email flows:
 5. Send a test email — follow the acceptance checklist in `plans/v0.1-sec.md` step 22.
 
 Future (not blocking the first run):
-- WhatsApp adapter (TypeScript/Baileys) — still stubbed, needs the same broker-mediated rewrite.
+- WhatsApp Baileys adapter (TypeScript) — still stubbed; for personal numbers only. The Python WhatsApp Cloud API adapter (`channels/whatsapp-cloud/`) is now shipped for business numbers.
 - Agent runtime integration with Langfuse + redactor wiring.
-- Calendar adapter (v0.3 per PRD).
 - Subject agents (Berwyn, etc. — v0.2 per PRD).
+
+Onboarding procedures (all documented per-channel):
+- Gmail: `docs/runbooks/gmail-oauth-setup.md`.
+- WhatsApp Cloud: Meta Business dashboard → access token → `stevens secrets add whatsapp_cloud.app_secret` + `uv run python -m whatsapp_cloud_adapter.add_account --access-token-stdin ...` per phone.
+- Calendar: same OAuth flow shape as Gmail (store `calendar.oauth_client.id/secret` in sealed store → `uv run python -m calendar_adapter.add_account --id calendar.personal ...`).
 
 ## Housekeeping (non-blocking)
 

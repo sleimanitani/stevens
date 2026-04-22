@@ -24,7 +24,7 @@ from __future__ import annotations
 import base64
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from .client import OutboundClient, OutboundError
 
@@ -151,3 +151,43 @@ class GmailClient:
             f"/threads/{thread_id}/modify",
             json={"removeLabelIds": [label_id]},
         )
+
+    async def list_history(
+        self,
+        account_id: str,
+        start_history_id: str,
+        *,
+        history_types: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Return changes since ``start_history_id``.
+
+        Gmail's ``users.history.list`` is the right primitive for
+        Pub/Sub-driven incremental sync: give it the last-seen historyId
+        and it tells you what's been added / deleted / labeled since.
+        """
+        params: Dict[str, Any] = {"startHistoryId": start_history_id}
+        if history_types:
+            params["historyTypes"] = history_types
+        return await self._api("GET", account_id, "/history", params=params)
+
+    async def get_message(
+        self, account_id: str, message_id: str, *, fmt: str = "full"
+    ) -> Dict[str, Any]:
+        return await self._api(
+            "GET",
+            account_id,
+            f"/messages/{message_id}",
+            params={"format": fmt},
+        )
+
+    async def watch(
+        self, account_id: str, topic_name: str, label_ids: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Register (or refresh) Gmail's Pub/Sub push for this account."""
+        body: Dict[str, Any] = {"topicName": topic_name}
+        if label_ids:
+            body["labelIds"] = label_ids
+        return await self._api("POST", account_id, "/watch", json=body)
+
+    async def get_profile(self, account_id: str) -> Dict[str, Any]:
+        return await self._api("GET", account_id, "/profile")

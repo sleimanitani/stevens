@@ -90,3 +90,43 @@ async def gmail_remove_label(
     return await _gmail(context).remove_label(
         params["account_id"], params["thread_id"], params["label_id"]
     )
+
+
+@capability("gmail.list_history", clear_params=["history_id", "history_types"])
+async def gmail_list_history(
+    agent: RegisteredAgent, params: Dict[str, Any], context: CapabilityContext
+) -> Dict[str, Any]:
+    return await _gmail(context).list_history(
+        params["account_id"],
+        str(params["history_id"]),
+        history_types=params.get("history_types"),
+    )
+
+
+@capability("gmail.get_message", clear_params=["format"])
+async def gmail_get_message(
+    agent: RegisteredAgent, params: Dict[str, Any], context: CapabilityContext
+) -> Dict[str, Any]:
+    return await _gmail(context).get_message(
+        params["account_id"],
+        params["message_id"],
+        fmt=params.get("format", "full"),
+    )
+
+
+@capability("gmail.watch", clear_params=["topic_name"])
+async def gmail_watch(
+    agent: RegisteredAgent, params: Dict[str, Any], context: CapabilityContext
+) -> Dict[str, Any]:
+    return await _gmail(context).watch(
+        params["account_id"],
+        params["topic_name"],
+        label_ids=params.get("label_ids"),
+    )
+
+
+@capability("gmail.get_profile")
+async def gmail_get_profile(
+    agent: RegisteredAgent, params: Dict[str, Any], context: CapabilityContext
+) -> Dict[str, Any]:
+    return await _gmail(context).get_profile(params["account_id"])

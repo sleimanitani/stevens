@@ -2,8 +2,9 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.1-sec` — Security Agent foundation
-**Active Build Plan:** [`plans/v0.1-sec.md`](plans/v0.1-sec.md)
+**Active milestone:** `v0.1.6-ergonomics` — low-overhead operator surface (Enkidu naming + onboard/provision/doctor/status CLI)
+**Active Build Plan:** [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md)
+**Predecessor (complete):** [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — 184/184 tests, security foundation shipped at `133dd78`.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped
@@ -26,17 +27,22 @@
 | 2026-04-22 | `802bebe` | `v0.1-sec` steps 18-21 — credentials_ref migration + OAuth-setup runbook + tool_factory rewrite (broker-mediated) + Langfuse redactor; 168/168 tests pass; step 22 (E2E) declared manual |
 | 2026-04-22 | `935c115` | Gmail adapter — real `add_account` OAuth flow, real `/gmail/push` handler (broker-mediated), real `watch_renew`; added `gmail.list_history`, `gmail.get_message`, `gmail.watch`, `gmail.get_profile` capabilities; 168/168 tests pass |
 | 2026-04-23 | `133dd78` | WhatsApp Cloud API adapter + Google Calendar adapter — both broker-mediated, same pattern as Gmail; migration 003 adds `whatsapp_cloud` channel_type; new `CalendarEventChangedEvent` schema; 184/184 tests pass |
+| 2026-04-29 | *(pending)* | `v0.1.6-ergonomics` shipped — Enkidu naming convention; policy presets; `stevens onboard / agent provision / agent run / passphrase remember / audit tail / doctor / status`; 241/241 tests pass |
 
 ## Up next
 
-**v0.1-sec is functionally complete** and the **Gmail adapter** is fully implemented (real OAuth flow, real Pub/Sub push handler, real watch renewal — all broker-mediated, adapter holds zero OAuth tokens).
+**v0.1-sec is functionally complete**, and **v0.1.6-ergonomics** shipped a low-overhead operator surface so per-channel + per-agent onboarding is one command + one browser consent.
 
-Remaining before first real email flows:
-1. Sol follows `docs/runbooks/gmail-oauth-setup.md` — one-time OAuth client setup.
-2. Sol runs `uv run python -m gmail_adapter.add_account --id gmail.personal --name "Sol personal"` per Gmail account — browser OAuth.
-3. Sol adds an `email_pm` entry with `gmail.*` allow rules to `security/policy/capabilities.yaml`, generates email_pm's keypair (`uv run python security/scripts/gen_test_keypair.py email_pm`), registers the pubkey (`uv run stevens agent register email_pm --pubkey-file ...`).
-4. Start the stack: `docker compose up -d`, then the agents runtime with env `STEVENS_CALLER_NAME=email_pm STEVENS_PRIVATE_KEY_PATH=...`.
-5. Send a test email — follow the acceptance checklist in `plans/v0.1-sec.md` step 22.
+Remaining before first real email flows (each step is now a single command):
+1. Sol does the one-time Google Cloud Console setup (project, enable Gmail/Calendar/Pub/Sub APIs, OAuth consent screen → External + Production, create Desktop OAuth client, link billing). No CLI shortcut for this — Google has no API.
+2. `uv run stevens secrets init` — initialize sealed store.
+3. `uv run stevens passphrase remember` — opt-in: store passphrase in OS keyring so future calls are silent.
+4. `uv run stevens onboard gmail --client-json ~/Downloads/client_secret_X.json --id gmail.personal -- --name "Sol personal"` — ingests OAuth client (and shreds source) the first time, runs the per-account browser flow.
+5. `uv run stevens agent provision email_pm --preset email_pm` — keypair + register + apply `gmail.*`+`calendar.*` allow rules + write env profile.
+6. `docker compose up -d` then `uv run stevens agent run email_pm`.
+7. Send a test email; verify with `uv run stevens audit tail -f` — follow the acceptance checklist in `plans/v0.1-sec.md` step 22.
+
+Run `uv run stevens doctor` at any point for a diagnostic with one-line remediations.
 
 Future (not blocking the first run):
 - WhatsApp Baileys adapter (TypeScript) — still stubbed; for personal numbers only. The Python WhatsApp Cloud API adapter (`channels/whatsapp-cloud/`) is now shipped for business numbers.

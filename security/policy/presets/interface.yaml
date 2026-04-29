@@ -1,0 +1,11 @@
+# Preset: interface
+#
+# The interface agent (v0.2+) talks to Sol directly. It does NOT call
+# channel APIs — it delegates to subject and email agents. So it needs
+# almost no broker-mediated capabilities of its own; just ping for liveness.
+#
+# Apply with:
+#   stevens agent provision interface --preset interface
+
+allow:
+  - capability: ping

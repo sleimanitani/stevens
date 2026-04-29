@@ -22,6 +22,21 @@ This document defines:
 - **User-facing persona:** embodied by the UI agent. All user-visible dialogue signs as Stevens, regardless of which internal agent did the work.
 - **Design stance:** small agents, shared infrastructure, many git checkpoints, reuse over rewrite, explicit trust boundaries. Every new capability should *reduce* the marginal cost of the next capability.
 
+### 1.1 Names
+
+Internal agents get human-readable names alongside their snake_case code identifiers. Names are display-only — they appear in logs, CLI banners, audit summaries, and docs. Code identifiers (`security_agent`, `email_pm`, container names, socket paths, capability allow rules) are **not** renamed; that would be churn for no functional benefit and would muddy the audit trail across the rename.
+
+Convention: pick a name from a coherent pantheon — currently mythological, with **Enkidu** (companion to Gilgamesh, sole keeper of the keys) for the Security Agent. Future agents: pick from the same source so names stay legible as a set.
+
+| Code identifier | Display name | Role |
+|---|---|---|
+| `security_agent` | **Enkidu** | sole broker for secrets and sensitive operations (§3) |
+| `email_pm` | *(unnamed)* | inbox triage agent |
+| `interface` (v0.2+) | *(unnamed)* | the agent that talks to Sol — uses the SOUL.md pattern |
+| subject agents (`berwyn_deal`, etc.) | *(unnamed)* | cross-channel agents per topic |
+
+When naming new agents: add a row here and a one-line justification (which character / why it fits). Don't rename code identifiers.
+
 ---
 
 ## 2. Guiding principles

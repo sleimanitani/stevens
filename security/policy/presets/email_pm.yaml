@@ -1,0 +1,29 @@
+# Preset: email_pm
+#
+# Allow rules for an email triage agent. Drafts replies and applies labels
+# on Gmail accounts; reads (but does not modify) calendar events for context.
+#
+# Apply with:
+#   stevens agent provision email_pm --preset email_pm
+#
+# This preset is INTENDED for an agent literally named `email_pm`. If you
+# pick a different name, pass --preset email_pm anyway — the merger writes
+# the rules under whatever agent name you provisioned.
+
+allow:
+  - capability: gmail.search
+    accounts: ["gmail.*"]
+  - capability: gmail.get_thread
+    accounts: ["gmail.*"]
+  - capability: gmail.get_message
+    accounts: ["gmail.*"]
+  - capability: gmail.create_draft
+    accounts: ["gmail.*"]
+  - capability: gmail.add_label
+    accounts: ["gmail.*"]
+  - capability: gmail.remove_label
+    accounts: ["gmail.*"]
+  - capability: calendar.list_events
+    accounts: ["calendar.*"]
+  - capability: calendar.get_event
+    accounts: ["calendar.*"]

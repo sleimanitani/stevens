@@ -37,6 +37,19 @@ from typing import Dict, List, Optional
 
 import yaml
 
+from .onboard import (
+    OnboardError,
+    ingest_google_oauth_client,
+    ingest_whatsapp_app_secret,
+    parse_google_client_json,
+    run_add_account,
+    shred_file,
+)
+from .provision import (
+    ProvisionError,
+    default_agents_dir,
+    provision_agent,
+)
 from .sealed_store import (
     SealedStore,
     SealedStoreError,
@@ -58,9 +71,22 @@ def _default_agents_yaml() -> Path:
 
 
 def _get_passphrase(*, confirm: bool = False) -> bytes:
+    """Source the passphrase, in priority order: env → OS keyring → prompt.
+
+    The env var honors confirm-mode too (it's an automation/test entry
+    point — there's nothing to confirm against). Keyring is only consulted
+    in non-confirm mode (use the prompt to set the keyring's value, not
+    the keyring itself).
+    """
     env = os.environ.get("STEVENS_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
+    if not confirm:
+        from . import keyring_passphrase
+
+        cached = keyring_passphrase.get()
+        if cached is not None:
+            return cached
     p = getpass.getpass("passphrase: ")
     if confirm:
         p2 = getpass.getpass("confirm passphrase: ")
@@ -157,6 +183,213 @@ def cmd_secrets_delete(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_status(args: argparse.Namespace) -> int:
+    """Print a one-glance status snapshot."""
+    from . import status
+
+    socket_path = os.environ.get(
+        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+    )
+    audit_dir = Path(
+        os.environ.get("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit")
+    )
+    print(
+        status.render_status(
+            secrets_root=args.root,
+            socket_path=socket_path,
+            agents_yaml=args.agents_yaml,
+            audit_dir=audit_dir,
+        )
+    )
+    return 0
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Run diagnostic checks. Returns non-zero if any non-info check fails."""
+    from . import doctor
+
+    socket_path = os.environ.get(
+        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+    )
+    capabilities_yaml = Path(
+        os.environ.get(
+            "STEVENS_SECURITY_POLICY", "security/policy/capabilities.yaml"
+        )
+    )
+    report = doctor.run_doctor(
+        secrets_root=args.root,
+        socket_path=socket_path,
+        agents_yaml=args.agents_yaml,
+        capabilities_yaml=capabilities_yaml,
+        agents_dir=args.agents_dir or default_agents_dir(),
+    )
+    print(doctor.format_report(report))
+    return 0 if report.passed else 1
+
+
+def cmd_audit_tail(args: argparse.Namespace) -> int:
+    """Print the last N lines of today's audit log (or follow with -f)."""
+    from . import audit_tail
+
+    audit_dir = args.audit_dir or Path(
+        os.environ.get("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit")
+    )
+    if args.follow:
+        # Print last N first, then start following.
+        audit_tail.print_tail(audit_dir, n=args.lines, out=sys.stdout, raw_mode=args.raw)
+        try:
+            audit_tail.follow(audit_dir, out=sys.stdout, raw_mode=args.raw)
+        except KeyboardInterrupt:
+            return 0
+    else:
+        audit_tail.print_tail(audit_dir, n=args.lines, out=sys.stdout, raw_mode=args.raw)
+    return 0
+
+
+def cmd_passphrase_remember(args: argparse.Namespace) -> int:
+    """Verify the passphrase unlocks the store, then stash it in the keyring."""
+    from . import keyring_passphrase
+
+    pp = getpass.getpass("passphrase: ")
+    pp_b = pp.encode("utf-8")
+    # Verify it actually unlocks the store before remembering.
+    SealedStore.unlock(args.root, pp_b)
+    try:
+        keyring_passphrase.set(pp_b)
+    except keyring_passphrase.KeyringUnavailable as e:
+        raise SystemExit(f"keyring not available: {e}")
+    print("passphrase stashed in OS keyring — future operations unlock silently")
+    return 0
+
+
+def cmd_passphrase_forget(args: argparse.Namespace) -> int:
+    """Remove the stored passphrase from the keyring."""
+    from . import keyring_passphrase
+
+    keyring_passphrase.clear()
+    print("passphrase removed from OS keyring")
+    return 0
+
+
+def cmd_onboard(args: argparse.Namespace) -> int:
+    """Run channel onboarding (ingest OAuth client if needed, then add_account)."""
+    channel = args.channel
+    pp = _get_passphrase()
+    store = SealedStore.unlock(args.root, pp)
+
+    if channel in ("gmail", "calendar"):
+        if args.client_json:
+            client_path = Path(args.client_json)
+            if not client_path.exists():
+                raise SystemExit(f"client JSON not found: {client_path}")
+            payload = client_path.read_bytes()
+            client = parse_google_client_json(payload)
+            outcome = ingest_google_oauth_client(
+                store,
+                namespace=channel,
+                client=client,
+                rotate=args.rotate_client,
+            )
+            print(f"OAuth client: {outcome}")
+            if outcome in ("ingested", "rotated"):
+                # Source file held secrets — best-effort secure delete.
+                shred_file(client_path)
+                print(f"shredded {client_path}")
+
+    elif channel == "whatsapp_cloud":
+        if args.app_secret_stdin:
+            secret = sys.stdin.buffer.read().strip()
+            if not secret:
+                raise SystemExit("--app-secret-stdin produced empty input")
+            outcome = ingest_whatsapp_app_secret(
+                store, app_secret=secret, rotate=args.rotate_client
+            )
+            print(f"WhatsApp Cloud app secret: {outcome}")
+
+    else:
+        raise SystemExit(f"unknown channel: {channel!r}")
+
+    # Pass through to add_account if the operator gave per-account flags.
+    add_account_args = list(args.add_account_args or [])
+    if not add_account_args:
+        print("(no per-account flags given; skipping add_account)")
+        return 0
+
+    print(f"running {channel}_adapter.add_account ...")
+    rc = run_add_account(channel, add_account_args)
+    return rc
+
+
+def cmd_agent_provision(args: argparse.Namespace) -> int:
+    """Provision a new agent: keypair + register + apply preset + write .env."""
+    capabilities_yaml = (
+        args.capabilities_yaml
+        or Path(
+            os.environ.get(
+                "STEVENS_SECURITY_POLICY", "security/policy/capabilities.yaml"
+            )
+        )
+    )
+    socket_path = os.environ.get(
+        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+    )
+    result = provision_agent(
+        name=args.name,
+        preset_name=args.preset,
+        agents_yaml=args.agents_yaml,
+        capabilities_yaml=capabilities_yaml,
+        agents_dir=args.agents_dir,
+        socket_path=socket_path,
+        force=args.force,
+    )
+    print(f"provisioned agent {result.name!r}")
+    print(f"  key file:        {result.key_path}  (chmod 0600)")
+    print(f"  env profile:     {result.env_path}")
+    print(f"  pubkey:          {result.pubkey_b64}")
+    if result.preset_applied:
+        verb = "applied" if result.preset_changed else "already up to date"
+        print(f"  preset:          {result.preset_applied} ({verb})")
+    print()
+    print(f"ready — run with: stevens agent run {result.name}")
+    return 0
+
+
+def cmd_agent_run(args: argparse.Namespace) -> int:
+    """Start the agents runtime with the named agent's env profile loaded."""
+    agents_dir = args.agents_dir or default_agents_dir()
+    env_path = agents_dir / f"{args.name}.env"
+    if not env_path.exists():
+        raise SystemExit(
+            f"no agent profile at {env_path} — run "
+            f"`stevens agent provision {args.name}` first"
+        )
+
+    env = dict(os.environ)
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, _, value = line.partition("=")
+        if not _:
+            continue
+        env[key] = value
+
+    key_path = Path(env.get("STEVENS_PRIVATE_KEY_PATH", ""))
+    if not key_path.exists():
+        raise SystemExit(
+            f"private key file not found: {key_path} — re-provision the agent"
+        )
+    if (key_path.stat().st_mode & 0o077) != 0:
+        raise SystemExit(
+            f"private key file {key_path} is group/world-readable; chmod 0600 first"
+        )
+
+    # Forward to the agents runtime. Use the same Python interpreter.
+    argv = [sys.executable, "-m", "agents.runtime"]
+    print(f"starting agent {args.name!r}: {' '.join(argv)}")
+    os.execvpe(argv[0], argv, env)
+
+
 def cmd_agent_register(args: argparse.Namespace) -> int:
     if args.pubkey_b64 and args.pubkey_file:
         raise SystemExit("cannot combine --pubkey-b64 and --pubkey-file")
@@ -205,7 +438,7 @@ def _add_root_flag(p: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="stevens",
-        description="Stevens Security Agent admin CLI.",
+        description="Stevens admin CLI — talks to Enkidu (the Security Agent).",
     )
     top = parser.add_subparsers(dest="cmd", required=True)
 
@@ -252,6 +485,93 @@ def build_parser() -> argparse.ArgumentParser:
     _add_root_flag(sp)
     sp.set_defaults(fn=cmd_secrets_delete)
 
+    # status
+    sts = top.add_parser("status", help="one-glance status snapshot")
+    _add_root_flag(sts)
+    sts.add_argument("--agents-yaml", type=Path, default=None)
+    sts.set_defaults(fn=cmd_status)
+
+    # doctor
+    doc = top.add_parser("doctor", help="run diagnostic checks on the install")
+    _add_root_flag(doc)
+    doc.add_argument("--agents-yaml", type=Path, default=None)
+    doc.add_argument("--agents-dir", type=Path, default=None)
+    doc.set_defaults(fn=cmd_doctor)
+
+    # audit
+    aud = top.add_parser("audit", help="audit log inspection")
+    aud_sub = aud.add_subparsers(dest="subcmd", required=True)
+
+    aud_tail = aud_sub.add_parser("tail", help="show recent audit log lines")
+    aud_tail.add_argument(
+        "--audit-dir",
+        type=Path,
+        default=None,
+        help="audit dir (default: $STEVENS_SECURITY_AUDIT_DIR or /var/lib/stevens/audit)",
+    )
+    aud_tail.add_argument(
+        "-n", "--lines", type=int, default=20, help="number of trailing lines (default 20)"
+    )
+    aud_tail.add_argument(
+        "-f", "--follow", action="store_true", help="poll for new lines forever"
+    )
+    aud_tail.add_argument(
+        "--raw", action="store_true", help="emit raw JSONL (for piping into jq)"
+    )
+    aud_tail.set_defaults(fn=cmd_audit_tail)
+
+    # passphrase
+    pph = top.add_parser("passphrase", help="manage the sealed-store passphrase in the OS keyring")
+    pp_sub = pph.add_subparsers(dest="subcmd", required=True)
+
+    pp_remember = pp_sub.add_parser(
+        "remember",
+        help="stash the passphrase in the OS keyring so future calls don't prompt",
+    )
+    _add_root_flag(pp_remember)
+    pp_remember.set_defaults(fn=cmd_passphrase_remember)
+
+    pp_forget = pp_sub.add_parser("forget", help="clear the keyring entry")
+    pp_forget.set_defaults(fn=cmd_passphrase_forget)
+
+    # onboard
+    onb = top.add_parser(
+        "onboard",
+        help="onboard a channel (ingest OAuth client + run per-account flow)",
+    )
+    onb.add_argument(
+        "channel",
+        choices=["gmail", "calendar", "whatsapp_cloud"],
+        help="which channel to onboard",
+    )
+    _add_root_flag(onb)
+    onb.add_argument(
+        "--client-json",
+        help="(gmail/calendar) Google Cloud Console OAuth-client JSON",
+    )
+    onb.add_argument(
+        "--app-secret-stdin",
+        action="store_true",
+        help="(whatsapp_cloud) read Meta app secret from stdin",
+    )
+    onb.add_argument(
+        "--rotate-client",
+        action="store_true",
+        help=(
+            "rotate the OAuth client / app secret if already present "
+            "(this invalidates existing accounts — opt in explicitly)"
+        ),
+    )
+    onb.add_argument(
+        "add_account_args",
+        nargs=argparse.REMAINDER,
+        help=(
+            "all flags after `--` are forwarded to "
+            "<channel>_adapter.add_account (e.g. --id gmail.personal --name 'Sol')"
+        ),
+    )
+    onb.set_defaults(fn=cmd_onboard)
+
     # agent
     agent = top.add_parser("agent", help="manage agent identity registry")
     ag = agent.add_subparsers(dest="subcmd", required=True)
@@ -263,6 +583,45 @@ def build_parser() -> argparse.ArgumentParser:
     group.add_argument("--pubkey-file")
     ap.add_argument("--agents-yaml", type=Path, default=None)
     ap.set_defaults(fn=cmd_agent_register)
+
+    ap = ag.add_parser(
+        "provision",
+        help="generate keypair + register + apply preset + write .env (one command)",
+    )
+    ap.add_argument("name")
+    ap.add_argument(
+        "--preset",
+        help="policy preset to apply (e.g. email_pm, subject_agent, interface)",
+    )
+    ap.add_argument("--agents-yaml", type=Path, default=None)
+    ap.add_argument(
+        "--capabilities-yaml",
+        type=Path,
+        default=None,
+        help="path to capabilities.yaml (default: $STEVENS_SECURITY_POLICY)",
+    )
+    ap.add_argument(
+        "--agents-dir",
+        type=Path,
+        default=None,
+        help="where to write key + env files (default: ~/.config/stevens/agents)",
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="rotate an existing agent (regenerates key, old key file becomes useless)",
+    )
+    ap.set_defaults(fn=cmd_agent_provision)
+
+    ap = ag.add_parser("run", help="start the agents runtime with this agent's profile")
+    ap.add_argument("name")
+    ap.add_argument(
+        "--agents-dir",
+        type=Path,
+        default=None,
+        help="where to look for the .env / .key files (default: ~/.config/stevens/agents)",
+    )
+    ap.set_defaults(fn=cmd_agent_run)
 
     return parser
 
@@ -281,7 +640,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     try:
         return int(args.fn(args) or 0)
-    except (SealedStoreError, UnlockError) as e:
+    except (SealedStoreError, UnlockError, OnboardError, ProvisionError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
 

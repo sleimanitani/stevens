@@ -47,6 +47,7 @@ async def _amain() -> int:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     log = logging.getLogger("stevens_security")
+    log.info("Enkidu — Stevens Security Agent (sole broker for secrets)")
 
     socket_path = os.environ.get(
         "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"

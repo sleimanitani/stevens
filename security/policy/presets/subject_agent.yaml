@@ -1,0 +1,37 @@
+# Preset: subject_agent
+#
+# Cross-channel subject agents (e.g. berwyn_deal, ai_startup) — see and
+# act across email + calendar + WhatsApp for one topic. Same draft-only
+# constraint as email_pm; sending requires explicit opt-in (not in v0.1).
+#
+# Apply with:
+#   stevens agent provision <name> --preset subject_agent
+
+allow:
+  # Gmail
+  - capability: gmail.search
+    accounts: ["gmail.*"]
+  - capability: gmail.get_thread
+    accounts: ["gmail.*"]
+  - capability: gmail.get_message
+    accounts: ["gmail.*"]
+  - capability: gmail.create_draft
+    accounts: ["gmail.*"]
+  - capability: gmail.add_label
+    accounts: ["gmail.*"]
+  - capability: gmail.remove_label
+    accounts: ["gmail.*"]
+
+  # Calendar (read-only — drafting calendar invites is not in v0.1)
+  - capability: calendar.list_events
+    accounts: ["calendar.*"]
+  - capability: calendar.get_event
+    accounts: ["calendar.*"]
+
+  # WhatsApp Cloud (business numbers; Baileys covers personal numbers separately)
+  # send_text is allowed because subject agents need to message back; the
+  # human-in-the-loop constraint is enforced by the agent runtime, not policy.
+  - capability: whatsapp.send_text
+    accounts: ["whatsapp_cloud.*"]
+  - capability: whatsapp.mark_read
+    accounts: ["whatsapp_cloud.*"]

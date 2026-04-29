@@ -143,7 +143,8 @@ async def test_concurrent_writes_produce_valid_json_lines(tmp_path):
 
 @pytest.mark.asyncio
 async def test_sensitive_param_only_appears_as_hash(tmp_path):
-    writer = AuditWriter(tmp_path)
+    fixed = datetime(2026, 4, 22, 12, 0, 0, tzinfo=timezone.utc)
+    writer = AuditWriter(tmp_path, clock=lambda: fixed)
     secret = "sk-live-abcdef1234567890"
     secret_hash = hash_param(secret)
     entry = make_entry(

@@ -56,6 +56,7 @@ Added in this document:
 8. **Reuse over regenerate.** Before any new tool, agent, or helper is written, we point to the closest existing thing and justify why it doesn't fit. Three similar implementations is a design smell.
 9. **Testable or declared untestable.** Every change ships with a test plan; if a change can't be meaningfully tested (external API, UI), we say so out loud and compensate with manual verification steps and observability.
 10. **Context and memory are load-bearing.** Stevens's long-term value compounds through what it remembers. Memory is structured, scoped, redacted, and auditable — not a pile of prompt strings. (§4, to be detailed.)
+11. **Agents are narrow.** Each agent sees only what it strictly needs to do its job: its own tool list (filtered via `skills.registry`), its own playbooks, its own subscription topics, its own scoped DB rows. No agent has a broad system view. Cross-agent communication is the bus (asynchronous) or Enkidu (synchronous, brokered) — never direct imports. The blast radius of any single compromised agent is bounded by its narrow surface. Operationalized in `docs/architecture/agent-isolation.md`.
 
 ---
 
@@ -223,6 +224,16 @@ Nothing in `security/` should migrate to `skills/`. If you find yourself wanting
 9. Manual end-to-end: Email PM drafts a reply without ever having held a raw OAuth token.
 
 Each step = its own commit + its own test.
+
+### 3.13 Approval gates and privileged execution
+
+Some capabilities are too consequential for a static allow rule — system-level installs, payment authorization, autonomous-send, credential rotation. These are **approval-gated**: each call goes through Sol unless a **standing approval** covers it.
+
+The approvals primitive is cross-cutting (used by the installer agent in v0.3, by future payment / credential / autonomous-send capabilities later). Standing approvals are predicate-bounded (orthogonal matchers on mechanism, source, packages, custom params) and revocable. There is no "trust forever, no questions" — only "trust until I revoke, scoped to these conditions."
+
+The privileged-execution protocol is the agent ↔ Enkidu shape for any privileged action: agent proposes a structured **plan** (data, not code); Enkidu validates, gates, executes, runs a **structural** health check, and records to a per-agent inventory. Agents never have sudo; only Enkidu does.
+
+Detail in `docs/protocols/approvals.md` and `docs/protocols/privileged-execution.md`. Wire-level details in `docs/protocols/security-agent.md`.
 
 ---
 

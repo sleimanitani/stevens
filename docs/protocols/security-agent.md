@@ -13,6 +13,20 @@ version the protocol.
 - **Authoritative parser reference:** `security/src/stevens_security/` —
   `framing.py`, `canonical.py`, `identity.py`.
 
+> **Related protocols.** This document covers the **wire shape** —
+> framing, envelopes, signature scope, error codes. It does NOT cover:
+>
+> - **Approval gates.** Some capabilities (e.g. `system.execute_privileged`)
+>   are flagged `requires_approval: true` in `capabilities.yaml` and go
+>   through standing or per-call approval before executing. See
+>   [`approvals.md`](approvals.md).
+> - **Privileged-execution protocol.** Agents propose structured plans
+>   that Enkidu validates and executes. See
+>   [`privileged-execution.md`](privileged-execution.md).
+>
+> The agent isolation principles those protocols rest on are documented
+> in [`../architecture/agent-isolation.md`](../architecture/agent-isolation.md).
+
 ---
 
 ## Transport

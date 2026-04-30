@@ -211,37 +211,56 @@ def _gmail_add_label(account_id: str, thread_id: str, label: str) -> str:
     return json.dumps({"ok": True, "label": label})
 
 
-# --- factory ---
+# --- per-tool builders (used by skills/src/skills/tools/gmail/* wrappers) ---
+
+
+def build_gmail_search_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_gmail_search,
+        name="gmail_search",
+        description="Search Gmail messages via the Security Agent broker.",
+        args_schema=SearchInput,
+    )
+
+
+def build_gmail_get_thread_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_gmail_get_thread,
+        name="gmail_get_thread",
+        description="Get the full contents of a Gmail thread by thread_id.",
+        args_schema=ThreadInput,
+    )
+
+
+def build_gmail_create_draft_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_gmail_create_draft,
+        name="gmail_create_draft",
+        description=(
+            "Create a DRAFT reply to a thread. The draft is saved to Gmail's "
+            "Drafts folder for Sol to review and send. You cannot send directly — "
+            "no gmail_send tool exists in this agent's toolkit."
+        ),
+        args_schema=DraftInput,
+    )
+
+
+def build_gmail_add_label_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_gmail_add_label,
+        name="gmail_add_label",
+        description="Add a label to a Gmail thread.",
+        args_schema=LabelInput,
+    )
+
+
+# --- factory (compat — Email PM transitions to skills.registry) ---
 
 
 def get_gmail_tools() -> list[BaseTool]:
     return [
-        StructuredTool.from_function(
-            func=_gmail_search,
-            name="gmail_search",
-            description="Search Gmail messages via the Security Agent broker.",
-            args_schema=SearchInput,
-        ),
-        StructuredTool.from_function(
-            func=_gmail_get_thread,
-            name="gmail_get_thread",
-            description="Get the full contents of a Gmail thread by thread_id.",
-            args_schema=ThreadInput,
-        ),
-        StructuredTool.from_function(
-            func=_gmail_create_draft,
-            name="gmail_create_draft",
-            description=(
-                "Create a DRAFT reply to a thread. The draft is saved to Gmail's "
-                "Drafts folder for Sol to review and send. You cannot send directly — "
-                "no gmail_send tool exists in this agent's toolkit."
-            ),
-            args_schema=DraftInput,
-        ),
-        StructuredTool.from_function(
-            func=_gmail_add_label,
-            name="gmail_add_label",
-            description="Add a label to a Gmail thread.",
-            args_schema=LabelInput,
-        ),
+        build_gmail_search_tool(),
+        build_gmail_get_thread_tool(),
+        build_gmail_create_draft_tool(),
+        build_gmail_add_label_tool(),
     ]

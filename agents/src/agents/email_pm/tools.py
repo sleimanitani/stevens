@@ -90,21 +90,27 @@ def _sync_list_overdue() -> str:
     return asyncio.run(_list_overdue_followups())
 
 
+def build_log_followup_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_sync_log_followup,
+        name="log_followup",
+        description=(
+            "Record a followup for a thread. direction='waiting_on_them' means they owe us "
+            "a response; 'waiting_on_me' means we owe them. deadline is ISO-8601 in UTC."
+        ),
+        args_schema=FollowupInput,
+    )
+
+
+def build_list_overdue_followups_tool() -> BaseTool:
+    return StructuredTool.from_function(
+        func=_sync_list_overdue,
+        name="list_overdue_followups",
+        description="List all open followups whose deadline has passed.",
+        args_schema=BaseModel,  # no args
+    )
+
+
 def get_email_pm_tools() -> list[BaseTool]:
-    return [
-        StructuredTool.from_function(
-            func=_sync_log_followup,
-            name="log_followup",
-            description=(
-                "Record a followup for a thread. direction='waiting_on_them' means they owe us "
-                "a response; 'waiting_on_me' means we owe them. deadline is ISO-8601 in UTC."
-            ),
-            args_schema=FollowupInput,
-        ),
-        StructuredTool.from_function(
-            func=_sync_list_overdue,
-            name="list_overdue_followups",
-            description="List all open followups whose deadline has passed.",
-            args_schema=BaseModel,  # no args
-        ),
-    ]
+    """Compat wrapper — Email PM now goes through skills.registry."""
+    return [build_log_followup_tool(), build_list_overdue_followups_tool()]

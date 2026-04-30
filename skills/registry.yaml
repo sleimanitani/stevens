@@ -1,0 +1,79 @@
+# skills/registry.yaml — single index of all approved tools and playbooks.
+#
+# Edits to this file land via ``scripts/review_skills.py approve``; agents
+# never write here. The file is read at runtime by ``skills.registry``.
+
+tools:
+  - id: pdf.read_pdf
+    path: skills/src/skills/tools/pdf/read_pdf.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
+  - id: gmail.search
+    path: skills/src/skills/tools/gmail/search.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
+  - id: gmail.get_thread
+    path: skills/src/skills/tools/gmail/get_thread.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
+  - id: gmail.create_draft
+    path: skills/src/skills/tools/gmail/create_draft.py
+    scope: shared
+    safety_class: read-write
+    version: 1.0.0
+
+  - id: gmail.add_label
+    path: skills/src/skills/tools/gmail/add_label.py
+    scope: shared
+    safety_class: read-write
+    version: 1.0.0
+
+  - id: followups.log_followup
+    path: skills/src/skills/tools/followups/log_followup.py
+    scope: restricted
+    allowed_agents: [email_pm]
+    safety_class: read-write
+    version: 1.0.0
+
+  - id: followups.list_overdue
+    path: skills/src/skills/tools/followups/list_overdue.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
+playbooks:
+  - id: email/appointment_request
+    path: skills/src/skills/playbooks/email/appointment_request.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]
+
+  - id: email/followup_overdue
+    path: skills/src/skills/playbooks/email/followup_overdue.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]
+
+  - id: email/task_extraction
+    path: skills/src/skills/playbooks/email/task_extraction.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]
+
+  - id: email/blocker_triage
+    path: skills/src/skills/playbooks/email/blocker_triage.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]
+
+  - id: email/sensitive_escalation
+    path: skills/src/skills/playbooks/email/sensitive_escalation.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]
+
+  - id: email/marketing_filter
+    path: skills/src/skills/playbooks/email/marketing_filter.md
+    applies_to_topics: ["email.received.*"]
+    applies_to_agents: ["email_pm"]

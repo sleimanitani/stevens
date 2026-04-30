@@ -5,64 +5,90 @@ for each matching bus event.
 
 Architecture:
   - Model: local Qwen3-30B via Ollama (langchain_ollama.ChatOllama).
-  - Tools: Gmail (via tool_factory) + email PM–specific tools.
+  - Tools: resolved via ``skills.registry.get_tools_for_agent("email_pm")``.
+  - Playbooks: resolved per-event via
+    ``skills.registry.get_playbooks_for("email_pm", event)`` — situation-
+    specific procedures injected into the prompt at runtime.
   - Graph: LangGraph's built-in ReAct agent (create_react_agent).
   - Memory: LangGraph Postgres checkpointer, keyed on account_id+thread_id
             so each thread has its own conversation state.
 
-v0.1 non-goals (deliberate):
-  - No cross-thread memory beyond followups table. Each thread is stateless.
-  - No escalation to remote models. Local only.
-  - No Langfuse setup here — done at runtime level (env-var based).
+Note: the ReAct agent is rebuilt per-event so freshly-matched playbooks can
+be injected into ``state_modifier``. Construction is cheap (the underlying
+ChatOllama and tool list are reused via module-level caches).
 """
 
 from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, List
 
 from langchain_core.messages import HumanMessage
+from langchain_core.tools import BaseTool
 from langchain_ollama import ChatOllama
 from langgraph.prebuilt import create_react_agent
 
 from shared.events import BaseEvent, EmailReceivedEvent
+from skills.playbooks.loader import Playbook
+from skills.registry import get_playbooks_for, get_tools_for_agent
 
-from ..tool_factory import get_gmail_tools
 from .prompts import SYSTEM_PROMPT
-from .tools import get_email_pm_tools
 
 
 log = logging.getLogger(__name__)
 
 
-def _build_agent():
-    """Construct the LangGraph ReAct agent.
+_MODEL = None
+_TOOLS: List[BaseTool] | None = None
 
-    Built once at module load, reused across events. The underlying
-    ChatOllama client is thread-safe for the request volumes we expect.
+
+def _model():
+    global _MODEL
+    if _MODEL is None:
+        _MODEL = ChatOllama(
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            model=os.environ.get("OLLAMA_MODEL", "qwen3:30b-a3b-instruct"),
+            temperature=0.2,
+        )
+    return _MODEL
+
+
+def _tools() -> List[BaseTool]:
+    global _TOOLS
+    if _TOOLS is None:
+        _TOOLS = get_tools_for_agent(
+            "email_pm",
+            excludes=["security.*"],
+            safety_max="read-write",
+        )
+    return _TOOLS
+
+
+def _render_playbooks_block(playbooks: List[Playbook]) -> str:
+    """Format a set of matched playbooks as a single prompt block.
+
+    Each playbook contributes its body verbatim under a heading. Cap is
+    enforced by retrieval; here we just render what we got.
     """
-    model = ChatOllama(
-        base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-        model=os.environ.get("OLLAMA_MODEL", "qwen3:30b-a3b-instruct"),
-        temperature=0.2,
-    )
-    tools = [*get_gmail_tools(), *get_email_pm_tools()]
-    return create_react_agent(model, tools, state_modifier=SYSTEM_PROMPT)
+    if not playbooks:
+        return ""
+    parts = ["# Situation-specific playbooks (matched for this event)"]
+    for pb in playbooks:
+        parts.append(f"\n## {pb.name}")
+        parts.append(f"_{pb.description}_")
+        parts.append(pb.body.strip())
+    return "\n".join(parts)
 
 
-_AGENT = None
-
-
-def _agent():
-    global _AGENT
-    if _AGENT is None:
-        _AGENT = _build_agent()
-    return _AGENT
+def _build_state_modifier(playbooks: List[Playbook]) -> str:
+    block = _render_playbooks_block(playbooks)
+    if not block:
+        return SYSTEM_PROMPT
+    return f"{SYSTEM_PROMPT}\n\n---\n\n{block}"
 
 
 def _event_to_prompt(event: EmailReceivedEvent) -> str:
-    """Render the event into a prompt for the agent."""
     return f"""A new email arrived on account {event.account_id}.
 
 From: {event.from_}
@@ -77,11 +103,7 @@ thread_id={event.thread_id!r} to see the full context before deciding.
 
 
 async def handle(event: BaseEvent, config: dict[str, Any]) -> None:
-    """Entry point called by the runtime for each email.received.* event.
-
-    The runtime handles account filtering before this is called, so we can
-    assume the event is one we should process.
-    """
+    """Entry point called by the runtime for each email.received.* event."""
     if not isinstance(event, EmailReceivedEvent):
         log.warning("email_pm got non-email event: %s", type(event).__name__)
         return
@@ -91,10 +113,19 @@ async def handle(event: BaseEvent, config: dict[str, Any]) -> None:
         event.account_id, event.thread_id, event.from_,
     )
 
-    prompt = _event_to_prompt(event)
-    agent = _agent()
+    matched = get_playbooks_for("email_pm", event)
+    log.info(
+        "email_pm matched %d playbook(s): %s",
+        len(matched), [p.name for p in matched],
+    )
 
-    # LangGraph's ainvoke is async; run it.
+    agent = create_react_agent(
+        _model(),
+        _tools(),
+        state_modifier=_build_state_modifier(matched),
+    )
+
+    prompt = _event_to_prompt(event)
     result = await agent.ainvoke(
         {"messages": [HumanMessage(content=prompt)]},
         config={
@@ -105,7 +136,5 @@ async def handle(event: BaseEvent, config: dict[str, Any]) -> None:
         },
     )
 
-    # For now, just log the final message. Observability via Langfuse
-    # (set LANGFUSE_* env vars and LangGraph auto-traces).
     final = result["messages"][-1].content if result.get("messages") else ""
     log.info("email_pm done thread=%s final=%s", event.thread_id, str(final)[:200])

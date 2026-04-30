@@ -5,6 +5,7 @@ description = "Agent runtime and individual agents"
 requires-python = ">=3.10"
 dependencies = [
     "shared",
+    "skills",
     "langgraph>=0.2",
     "langchain-core>=0.3",
     "langchain-ollama>=0.2",

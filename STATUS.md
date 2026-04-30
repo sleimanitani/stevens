@@ -2,9 +2,11 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.1.6-ergonomics` — low-overhead operator surface (Enkidu naming + onboard/provision/doctor/status CLI)
-**Active Build Plan:** [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md)
-**Predecessor (complete):** [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — 184/184 tests, security foundation shipped at `133dd78`.
+**Active milestone:** Email PM live run (no plan doc — gated on operator OAuth setup, see "Up next").
+**Predecessors (complete):**
+- [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
+- [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.
+- [`plans/v0.2-skills.md`](plans/v0.2-skills.md) — shared skills layer, *(pending hash)*.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped
@@ -28,6 +30,7 @@
 | 2026-04-22 | `935c115` | Gmail adapter — real `add_account` OAuth flow, real `/gmail/push` handler (broker-mediated), real `watch_renew`; added `gmail.list_history`, `gmail.get_message`, `gmail.watch`, `gmail.get_profile` capabilities; 168/168 tests pass |
 | 2026-04-23 | `133dd78` | WhatsApp Cloud API adapter + Google Calendar adapter — both broker-mediated, same pattern as Gmail; migration 003 adds `whatsapp_cloud` channel_type; new `CalendarEventChangedEvent` schema; 184/184 tests pass |
 | 2026-04-29 | `9b32865` | `v0.1.6-ergonomics` shipped — Enkidu naming convention; policy presets; `stevens onboard / agent provision / agent run / passphrase remember / audit tail / doctor / status`; 241/241 tests pass |
+| 2026-04-30 | *(pending)* | `v0.2-skills` shipped — `skills/` package (tools + playbooks separated); `propose_skill` + `scripts/review_skills.py`; PDF reader (acceptance gate, 3/4 cases — OCR skipped without tesseract); Email PM rewired through registry with 6 starter playbooks; STEVENS.md skills-vs-capabilities boundary documented; 297/297 tests pass (1 skipped) |
 
 ## Up next
 

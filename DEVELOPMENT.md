@@ -183,3 +183,97 @@ Steps:
 
 If this takes longer than 2 hours, the architecture is leaking. File an
 issue against yourself.
+
+---
+
+## Skills layer: tools and playbooks
+
+The `skills/` package is the substrate every agent is built on. Two
+separate first-class concepts: **tools** (Python functions agents call)
+and **playbooks** (Markdown procedural knowledge loaded into prompts at
+runtime). They are NOT the same thing — different review workflows,
+different storage, different failure modes.
+
+See `CLAUDE_skills_layer.md` for the canonical spec.
+
+### Adding a new tool
+
+1. Write the implementation under `skills/proposed/tools/<category>/<slug>-<short>.py`
+   using this shape (see `skills/src/skills/tools/pdf/read_pdf.py` for the
+   canonical example):
+   ```python
+   from langchain_core.tools import StructuredTool
+   from pydantic import BaseModel
+
+   TOOL_METADATA = {
+       "id": "<category>.<name>",
+       "version": "1.0.0",
+       "scope": "shared",          # or "restricted"
+       "safety_class": "read-only", # or "read-write" / "destructive"
+   }
+
+   class Inputs(BaseModel): ...
+
+   def _impl(...): ...
+
+   def build_tool() -> StructuredTool:
+       return StructuredTool.from_function(...)
+   ```
+2. (Optional, agents only) Call `propose_skill(kind="tool", title=..., body=...)`
+   from inside an agent at runtime — that records the proposal in the
+   `skill_proposals` table and writes the body to `skills/proposed/tools/`
+   automatically.
+3. Get it reviewed: `uv run python scripts/review_skills.py list`,
+   `... show <id>`, then `... approve <id> --scope shared --safety read-only`.
+   Approval moves the file under `skills/src/skills/tools/<category>/`
+   and appends the entry to `skills/registry.yaml`.
+
+### Adding a new playbook
+
+1. Write the body under `skills/proposed/playbooks/<category>/<slug>-<short>.md`
+   with `agentskills.io`-compatible frontmatter:
+   ```markdown
+   ---
+   name: email-blocker-triage
+   description: Identify threads where Sol is blocking someone else
+   version: 1.0.0
+   author: email_pm
+   license: proprietary
+   metadata:
+     applies_to_topics: ["email.received.*"]
+     applies_to_agents: ["email_pm"]
+     triggers:
+       - regex: "(?i)(blocking|blocked on|waiting for you)"
+     status: active
+   ---
+
+   ## When to apply
+   ...
+   ## Procedure
+   ...
+   ## Anti-patterns
+   ...
+   ```
+2. Approve it: `uv run python scripts/review_skills.py approve <id> --category email`.
+3. The next runtime load will pick it up — no restart of Enkidu needed.
+
+### Reviewing proposals
+
+`uv run python scripts/review_skills.py list` shows pending. For each:
+
+- **Tools**: read every line. Confirm `safety_class` is honest (does it
+  modify state? destructive?). Confirm `scope` is right (does another
+  agent ever need this?). Confirm no secret material is read or returned
+  outside an Enkidu capability call.
+- **Playbooks**: read the procedure. Verify each `triggers.regex`
+  matches plausible inputs without false-positives. Verify the "anti-
+  patterns" section is real.
+
+Approve with `... approve <id>` (defaults: scope=shared, safety=read-only,
+category derived from slug). Reject with `... reject <id> --reason "..."`.
+
+### Tesseract for the PDF reader's OCR fallback
+
+`apt install tesseract-ocr` once on the dev machine. Without it, the
+PDF reader's OCR fallback skips with a warning rather than failing —
+text-based PDFs still work; only scanned PDFs are affected.

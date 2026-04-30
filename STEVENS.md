@@ -193,6 +193,23 @@ The current `docs/prd.docx` v0.1 plan has several patterns that violate the rule
 4. **Audit log destination — local only for v0.1.** Append-only file on the Security Agent's volume, daily rollover, readable via `stevens audit`. Off-box replication deferred until Stevens runs on more than one host.
 5. **Agent identity keypair — per-install, first boot.** Each agent generates its own Ed25519 keypair on first boot, persisted to its local state volume. Sol acknowledges the public key once via `stevens agent register <name>`. Private keys never in images, never in git.
 
+### 3.11.1 Skills vs. capabilities (boundary)
+
+The skills layer (`skills/` — see `CLAUDE_skills_layer.md` and `plans/v0.2-skills.md`) and Enkidu's capability registry are distinct, non-overlapping systems. Don't move things between them.
+
+| | Capabilities (Enkidu) | Skills (`skills/`) |
+|---|---|---|
+| Lives in | `security/src/stevens_security/capabilities/` | `skills/src/skills/` |
+| Form | RPC handlers (deterministic Python functions) | LangChain tools + Markdown playbooks |
+| Caller | broker-mediated (signed UDS request) | direct in-process import |
+| Can hold secrets? | yes (sealed store) | no — must call a capability for any secret-bearing operation |
+| Reviewed by | Sol via `capabilities.yaml` allow rules | Sol via `scripts/review_skills.py approve` |
+| Lifecycle | created at design time | proposed by agents, reviewed by Sol, promoted into the registry |
+
+A skill *may* call a capability (the Gmail tool wrappers do exactly this — they're skills that invoke `gmail.search` / `gmail.create_draft` / etc. capabilities through the broker). A capability never calls a skill. Capabilities are the trust boundary; skills are agent-facing surface area.
+
+Nothing in `security/` should migrate to `skills/`. If you find yourself wanting to, that's a sign Enkidu is leaking concerns it shouldn't.
+
 ### 3.12 Security milestone (proposed sequence)
 
 1. Security Agent skeleton: container, UDS server, identity verification, policy loader, audit writer.

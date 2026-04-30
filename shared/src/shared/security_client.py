@@ -69,12 +69,29 @@ class InternalError(ResponseError):
     """Server returned error_code=INTERNAL."""
 
 
+class BlockedError(ResponseError):
+    """Server returned error_code=BLOCKED — approval pending.
+
+    The agent should treat this as a "wait" state: surface the
+    ``approval_request_id`` to whatever orchestrator (CLI, runtime) is
+    waiting for the result, and not retry on its own.
+    """
+
+    def __init__(
+        self, code: str, message: str, trace_id: Optional[str],
+        approval_request_id: Optional[str] = None,
+    ) -> None:
+        super().__init__(code, message, trace_id)
+        self.approval_request_id = approval_request_id
+
+
 _ERR_CLASSES = {
     "AUTH": AuthError,
     "DENY": DenyError,
     "NOTFOUND": NotFoundError,
     "RATE": RateError,
     "INTERNAL": InternalError,
+    "BLOCKED": BlockedError,
 }
 
 
@@ -174,8 +191,15 @@ class SecurityClient:
         code = str(resp.get("error_code") or "INTERNAL")
         message = str(resp.get("message") or "")
         trace_id = resp.get("trace_id")
+        trace_id = trace_id if isinstance(trace_id, str) else None
         err_cls = _ERR_CLASSES.get(code, ResponseError)
-        raise err_cls(code, message, trace_id if isinstance(trace_id, str) else None)
+        if err_cls is BlockedError:
+            arid = resp.get("approval_request_id")
+            raise BlockedError(
+                code, message, trace_id,
+                approval_request_id=arid if isinstance(arid, str) else None,
+            )
+        raise err_cls(code, message, trace_id)
 
     def _build_signed(self, capability: str, params: Dict[str, Any]) -> Dict[str, Any]:
         envelope = {

@@ -102,12 +102,69 @@ class CalendarEventChangedEvent(BaseEvent):
         return f"calendar.event.changed.{self.account_id}"
 
 
+class SystemDepRequestedEvent(BaseEvent):
+    """The operator (or another agent) asked the installer to ensure a dep
+    is installed. The installer subscribes; nothing else should publish to
+    this topic without good reason."""
+
+    source: Literal["operator"] = "operator"
+    package: str
+    mechanism: str = "apt"
+    rationale: Optional[str] = None
+    # account_id is unused for this event family; we set "system" to satisfy
+    # the BaseEvent contract since dep events are host-scoped, not account-scoped.
+
+    @property
+    def topic(self) -> str:
+        return f"system.dep.requested.{self.package}"
+
+
+class SystemDepInstalledEvent(BaseEvent):
+    source: Literal["installer"] = "installer"
+    package: str
+    plan_id: Optional[str] = None
+    inventory_id: Optional[str] = None
+    reason: Optional[str] = None      # e.g. "already_installed"
+    version: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"system.dep.installed.{self.package}"
+
+
+class SystemDepAwaitingApprovalEvent(BaseEvent):
+    source: Literal["installer"] = "installer"
+    package: str
+    plan_id: str
+    approval_request_id: str
+    rationale: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"system.dep.awaiting_approval.{self.package}"
+
+
+class SystemDepFailedEvent(BaseEvent):
+    source: Literal["installer"] = "installer"
+    package: str
+    reason: str
+    detail: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"system.dep.failed.{self.package}"
+
+
 # Registry of all known event types, keyed by topic pattern prefix.
 # Used by the bus to deserialize events into the right Pydantic model.
 EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "email.received": EmailReceivedEvent,
     "whatsapp.message.received": WhatsAppMessageEvent,
     "calendar.event.changed": CalendarEventChangedEvent,
+    "system.dep.requested": SystemDepRequestedEvent,
+    "system.dep.installed": SystemDepInstalledEvent,
+    "system.dep.awaiting_approval": SystemDepAwaitingApprovalEvent,
+    "system.dep.failed": SystemDepFailedEvent,
 }
 
 

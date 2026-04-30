@@ -160,6 +160,106 @@ def test_rule_carries_constraints():
     assert d.rule.constraints == {"max_tokens_per_day": 200000}
 
 
+# --- requires_approval / rationale_required ---
+
+
+def test_requires_approval_flag_propagates(tmp_path):
+    path = tmp_path / "capabilities.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "agents": [
+                    {
+                        "name": "installer",
+                        "allow": [
+                            {
+                                "capability": "system.execute_privileged",
+                                "requires_approval": True,
+                                "rationale_required": True,
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+    p = load_policy(path)
+    rule = p.agents["installer"].allow["system.execute_privileged"]
+    assert rule.requires_approval is True
+    assert rule.rationale_required is True
+
+
+def test_decision_carries_requires_approval(tmp_path):
+    path = tmp_path / "capabilities.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "agents": [
+                    {
+                        "name": "installer",
+                        "allow": [
+                            {
+                                "capability": "system.execute_privileged",
+                                "requires_approval": True,
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+    p = load_policy(path)
+    d = evaluate(p, "installer", "system.execute_privileged", {})
+    assert d.allow is True
+    assert d.requires_approval is True
+    assert d.rationale_required is False
+
+
+def test_default_no_approval_required(tmp_path):
+    path = tmp_path / "capabilities.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "agents": [
+                    {
+                        "name": "email_pm",
+                        "allow": [{"capability": "gmail.search", "accounts": ["gmail.*"]}],
+                    }
+                ]
+            }
+        )
+    )
+    p = load_policy(path)
+    d = evaluate(p, "email_pm", "gmail.search", {"account_id": "gmail.personal"})
+    assert d.allow is True
+    assert d.requires_approval is False
+
+
+def test_requires_approval_only_kicks_in_on_allow(tmp_path):
+    """A denied call doesn't get the requires_approval flag — deny is final."""
+    path = tmp_path / "capabilities.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "agents": [
+                    {
+                        "name": "x",
+                        "allow": [
+                            {"capability": "y", "requires_approval": True}
+                        ],
+                        "deny": ["y"],
+                    }
+                ]
+            }
+        )
+    )
+    p = load_policy(path)
+    d = evaluate(p, "x", "y", {})
+    assert d.allow is False
+    assert d.reason == "explicitly denied"
+    assert d.requires_approval is False
+
+
 # --- Loader tests ---
 
 

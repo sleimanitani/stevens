@@ -18,6 +18,16 @@
 #                                           # capability is not account-scoped.
 #           constraints:                    # optional; parsed but not
 #             max_tokens_per_day: 200000    # enforced until step 6.
+#           requires_approval: true         # optional; default false.
+#                                           # When true, the dispatcher checks
+#                                           # standing approvals first; on miss,
+#                                           # enqueues a per-call request and
+#                                           # returns BLOCKED. See
+#                                           # docs/protocols/approvals.md.
+#           rationale_required: true        # optional; default false. When true,
+#                                           # the call's params must include a
+#                                           # `rationale` string surfaced to Sol
+#                                           # in the per-call approval request.
 #       deny:                               # optional; denies override allows.
 #         - <capability>
 #         - <capability>

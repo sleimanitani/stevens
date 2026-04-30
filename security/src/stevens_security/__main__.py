@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 from .audit import AuditWriter
-from .capabilities import ping  # noqa: F401 — registers the capability
+from .capabilities import ping, system  # noqa: F401 — registers capabilities
 from .capabilities.registry import default_registry
 from .dispatch import build_dispatcher
 from .identity import NonceCache, load_agents_registry

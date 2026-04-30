@@ -47,6 +47,8 @@ class CapabilityRule:
     name: str
     account_patterns: List[str] = field(default_factory=list)
     constraints: Dict[str, Any] = field(default_factory=dict)
+    requires_approval: bool = False
+    rationale_required: bool = False
 
     @property
     def is_account_scoped(self) -> bool:
@@ -70,6 +72,11 @@ class PolicyDecision:
     allow: bool
     reason: str
     rule: Optional[CapabilityRule] = None
+    # Set when the matched rule has ``requires_approval: true``. The dispatcher
+    # consults the standing-approval matcher next; on miss, it enqueues a
+    # per-call request and returns BLOCKED to the caller.
+    requires_approval: bool = False
+    rationale_required: bool = False
 
 
 def _parse_rule(raw: Dict[str, Any]) -> CapabilityRule:
@@ -86,10 +93,14 @@ def _parse_rule(raw: Dict[str, Any]) -> CapabilityRule:
     constraints = raw.get("constraints", {}) or {}
     if not isinstance(constraints, dict):
         raise PolicyError(f"allow entry 'constraints' must be a map: {raw!r}")
+    requires_approval = bool(raw.get("requires_approval", False))
+    rationale_required = bool(raw.get("rationale_required", False))
     return CapabilityRule(
         name=name,
         account_patterns=list(accounts),
         constraints=dict(constraints),
+        requires_approval=requires_approval,
+        rationale_required=rationale_required,
     )
 
 
@@ -183,4 +194,10 @@ def evaluate(
                 rule=rule,
             )
 
-    return PolicyDecision(allow=True, reason="ok", rule=rule)
+    return PolicyDecision(
+        allow=True,
+        reason="ok",
+        rule=rule,
+        requires_approval=rule.requires_approval,
+        rationale_required=rule.rationale_required,
+    )

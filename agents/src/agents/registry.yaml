@@ -21,6 +21,13 @@ agents:
     model: local
     enabled: true
 
+  - name: installer
+    subscribes:
+      - "system.dep.requested.*"
+    accounts: "all"           # accounts unused for system events
+    model: none               # no LLM — deterministic logic
+    enabled: true
+
   # Future agents go here:
   #
   # - name: berwyn_deal

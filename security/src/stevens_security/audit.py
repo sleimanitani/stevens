@@ -35,7 +35,7 @@ class AuditEntry:
 
     ts: str
     trace_id: str
-    outcome: str  # "ok" | "deny" | "auth_fail" | "notfound" | "rate" | "internal" | "framing_fail"
+    outcome: str  # "ok" | "deny" | "auth_fail" | "notfound" | "rate" | "internal" | "framing_fail" | "blocked"
     latency_ms: int
     caller: Optional[str] = None
     capability: Optional[str] = None
@@ -44,6 +44,13 @@ class AuditEntry:
     param_hashes: Dict[str, str] = field(default_factory=dict)
     param_values: Dict[str, Any] = field(default_factory=dict)
     extra: Dict[str, Any] = field(default_factory=dict)
+    # Approval-gating metadata.
+    # `approval_via` is "standing/<sa_id>" or "per_call/<req_id>" when the call
+    # was authorized through an approval. Absent for calls that didn't require
+    # approval. See docs/protocols/approvals.md.
+    approval_via: Optional[str] = None
+    # On `outcome="blocked"`, the queued per-call request id Sol will decide on.
+    approval_request_id: Optional[str] = None
 
 
 def hash_param(value: Any) -> str:

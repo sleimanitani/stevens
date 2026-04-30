@@ -28,6 +28,14 @@ agents:
     model: none               # no LLM — deterministic logic
     enabled: true
 
+  - name: web                 # display name: Arachne (see STEVENS.md §1.1)
+    subscribes:
+      - "web.fetch.requested.*"
+      - "web.search.requested.*"
+    accounts: "all"
+    model: none               # no LLM — async-path proxy
+    enabled: true
+
   # Future agents go here:
   #
   # - name: berwyn_deal

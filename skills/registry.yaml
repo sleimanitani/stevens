@@ -47,6 +47,18 @@ tools:
     safety_class: read-only
     version: 1.0.0
 
+  - id: web.fetch
+    path: skills/src/skills/tools/web/fetch.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
+  - id: web.search
+    path: skills/src/skills/tools/web/search.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
 playbooks:
   - id: email/appointment_request
     path: skills/src/skills/playbooks/email/appointment_request.md

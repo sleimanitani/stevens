@@ -32,6 +32,8 @@ Convention: pick a name from a coherent pantheon — currently mythological, wit
 |---|---|---|
 | `security_agent` | **Enkidu** | sole broker for secrets and sensitive operations (§3) |
 | `email_pm` | *(unnamed)* | inbox triage agent |
+| `installer` | *(unnamed)* | system-package installer; proposes plans for Enkidu to execute |
+| `web` | **Arachne** | weaver of fetches and searches — async-path web agent (v0.3.1). Greek mythology: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
 | `interface` (v0.2+) | *(unnamed)* | the agent that talks to Sol — uses the SOUL.md pattern |
 | subject agents (`berwyn_deal`, etc.) | *(unnamed)* | cross-channel agents per topic |
 

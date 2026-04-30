@@ -2,12 +2,13 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.3-installer-and-approvals` — approvals primitive (per-call + standing, orthogonal predicates) + installer agent. Tesseract install is the integration test.
-**Active Build Plan:** [`plans/v0.3-installer-and-approvals.md`](plans/v0.3-installer-and-approvals.md)
+**Active milestone:** `v0.3.1-web` — **Arachne** (the spider) async-path agent + `network.fetch` / `network.search` capabilities (sync path) + modular search backend (Brave default) + PDF corpus regression script.
+**Active Build Plan:** [`plans/v0.3.1-web.md`](plans/v0.3.1-web.md)
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.
 - [`plans/v0.2-skills.md`](plans/v0.2-skills.md) — shared skills layer, `d03a547`.
+- [`plans/v0.3-installer-and-approvals.md`](plans/v0.3-installer-and-approvals.md) — approvals primitive + installer, `c2f0929`.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped
@@ -34,6 +35,7 @@
 | 2026-04-30 | `d03a547` | `v0.2-skills` shipped — `skills/` package (tools + playbooks separated); `propose_skill` + `scripts/review_skills.py`; PDF reader (acceptance gate, 3/4 cases — OCR skipped without tesseract); Email PM rewired through registry with 6 starter playbooks; STEVENS.md skills-vs-capabilities boundary documented; 297/297 tests pass (1 skipped) |
 | 2026-04-30 | `fb47326` | docs — three new architecture/protocol docs (agent-isolation, approvals, privileged-execution) + STEVENS.md §1.1 (Names) and §3.13 (Approval gates) |
 | 2026-04-30 | `c2f0929` | `v0.3-installer-and-approvals` shipped — approvals primitive (per-call queue + standing approvals with orthogonal predicates); `apt` mechanism + `system.*` capabilities (`read_environment`, `plan_install`, `execute_privileged`, `write_inventory`); installer agent; `stevens approval` + `stevens dep` CLI handlers; e2e BLOCKED → approve → replay → ok and standing-approval silent execute paths green; 389/389 tests pass (1 skipped) |
+| 2026-04-30 | *(pending)* | `v0.3.1-web` shipped — **Arachne** async-path web agent + `network.fetch` / `network.search` capabilities + modular search backend (Brave default) + in-memory TTL cache + per-domain rate limiter + `web_fetch`/`web_search` skills + PDF corpus regression script. Cache-sharing future shape and Browser Harness reference noted in `docs/architecture/agent-isolation.md`. 446/446 tests pass (1 skipped) |
 
 ## Up next
 

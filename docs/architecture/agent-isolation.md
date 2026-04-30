@@ -156,10 +156,53 @@ If the new agent's surface starts looking broad ("this would be useful for…"),
 
 ---
 
-## 8. References
+## 8. Shared state — the future "secured shared cache" shape
+
+A handful of state is naturally shared across consumers — the web fetch
+cache (Arachne's domain) is the canonical example. v0.3.1 ships an
+in-memory cache living inside Enkidu's process; cross-process / cross-host
+sharing is **deliberately not enabled**.
+
+When (not if) we want to share that state — e.g. a second Enkidu replica
+on another host, or a future analytics agent that wants to inspect cache
+hits — the shape is:
+
+- The cache becomes a Postgres-backed table (or a Redis instance, decided
+  later).
+- Access is **mediated by Enkidu** through new capabilities like
+  `web.cache.get(key)` / `web.cache.put(key, value, ttl)` rather than
+  direct DB access. Same pattern as everything else: agents never read
+  shared state directly; they ask Enkidu, which enforces ACL.
+- Per-agent ACL on the cache namespace: agent A can only read entries it
+  put there, OR a designated read-only namespace with Sol-approved
+  contents. (TBD — design lands when the need is real.)
+
+The point of writing this down now: when we hit "we need to share the
+cache," we don't shortcut to "let's have all agents read the table
+directly." That would breach the agent-isolation principle. Instead:
+new capabilities, ACL-enforced, audit-logged, same as every other piece
+of shared state.
+
+## 9. Future references for borrowed patterns
+
+When we need a class of capability we haven't built yet, the right move
+is "read a reference implementation of the same shape, write Python in
+our architecture." Mark these here so the next time the need lands the
+reference is queued up:
+
+- **Browser Harness** (TS/Node) — for browser automation when an agent
+  needs to scrape a JavaScript-rendered site (LinkedIn, property records,
+  etc.). Distinct from `network.fetch` / Arachne, which is HTTP-only.
+  Same posture as OpenClaw: read it as documentation, write a Python
+  skill under `skills/tools/browser/` that fits our architecture, credit
+  in a header comment. **Not on the v0.3.x roadmap;** lands when a
+  research/subject agent needs JS-rendered content.
+
+## 10. References
 
 - STEVENS.md §2 (Principles), §3.11.1 (Skills vs. capabilities).
 - `docs/protocols/approvals.md` — when an agent wants to do something approval-gated.
 - `docs/protocols/privileged-execution.md` — when an agent wants to do something privileged.
 - `docs/protocols/security-agent.md` — wire protocol for talking to Enkidu.
 - `CLAUDE_skills_layer.md` — the skills layer that implements the per-agent tool/playbook surface.
+- `CLAUDE_openclaw_evaluation.md` — borrow-don't-depend posture for OpenClaw / Hermes / Browser Harness.

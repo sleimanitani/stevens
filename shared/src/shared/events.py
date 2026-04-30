@@ -155,6 +155,68 @@ class SystemDepFailedEvent(BaseEvent):
         return f"system.dep.failed.{self.package}"
 
 
+class WebFetchRequestedEvent(BaseEvent):
+    """Async-path request: please fetch this URL on my behalf.
+
+    Arachne (the web agent) subscribes to ``web.fetch.requested.*`` and
+    publishes a paired ``WebFetchResponseEvent`` to
+    ``web.fetch.response.<request_id>`` when the fetch completes.
+    """
+
+    source: Literal["agent"] = "agent"
+    request_id: str
+    url: str
+    follow_redirects: bool = True
+    requested_by: str   # the requesting agent's name; for audit + debug
+
+    @property
+    def topic(self) -> str:
+        return f"web.fetch.requested.{self.request_id}"
+
+
+class WebFetchResponseEvent(BaseEvent):
+    source: Literal["arachne"] = "arachne"
+    request_id: str
+    status: Optional[int] = None
+    body_text: Optional[str] = None
+    body_b64: Optional[str] = None
+    final_url: Optional[str] = None
+    truncated: bool = False
+    cache_hit: bool = False
+    error: Optional[str] = None
+    error_detail: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"web.fetch.response.{self.request_id}"
+
+
+class WebSearchRequestedEvent(BaseEvent):
+    source: Literal["agent"] = "agent"
+    request_id: str
+    query: str
+    max_results: int = 10
+    requested_by: str
+
+    @property
+    def topic(self) -> str:
+        return f"web.search.requested.{self.request_id}"
+
+
+class WebSearchResponseEvent(BaseEvent):
+    source: Literal["arachne"] = "arachne"
+    request_id: str
+    backend: Optional[str] = None
+    results: list[dict] = Field(default_factory=list)
+    cache_hit: bool = False
+    error: Optional[str] = None
+    error_detail: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"web.search.response.{self.request_id}"
+
+
 # Registry of all known event types, keyed by topic pattern prefix.
 # Used by the bus to deserialize events into the right Pydantic model.
 EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
@@ -165,6 +227,10 @@ EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "system.dep.installed": SystemDepInstalledEvent,
     "system.dep.awaiting_approval": SystemDepAwaitingApprovalEvent,
     "system.dep.failed": SystemDepFailedEvent,
+    "web.fetch.requested": WebFetchRequestedEvent,
+    "web.fetch.response": WebFetchResponseEvent,
+    "web.search.requested": WebSearchRequestedEvent,
+    "web.search.response": WebSearchResponseEvent,
 }
 
 

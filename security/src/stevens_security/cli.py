@@ -623,7 +623,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.set_defaults(fn=cmd_agent_run)
 
+    # approval / dep — registered in cli_approvals.
+    from . import cli_approvals
+
+    cli_approvals.add_approval_parser(top)
+    cli_approvals.add_dep_parser(top)
+
     return parser
+
+
+def _get_approval_store():
+    """Pick the Postgres-backed store if DATABASE_URL is set, else in-memory."""
+    if os.environ.get("DATABASE_URL"):
+        from .approvals.store_postgres import PostgresApprovalStore
+
+        return PostgresApprovalStore()
+    from .approvals.store import InMemoryApprovalStore
+
+    return InMemoryApprovalStore()
+
+
+def _get_inventory():
+    if os.environ.get("DATABASE_URL"):
+        from .system_runtime_postgres import PostgresInventory
+
+        return PostgresInventory()
+    from .system_runtime import InMemoryInventory
+
+    return InMemoryInventory()
+
+
+async def _run_approval_handler(args) -> int:
+    """Dispatch approval / dep subcommands, async because the handlers are."""
+    handler = args._handler
+    cmd = args.cmd
+    if cmd == "approval":
+        store = _get_approval_store()
+        # Some approval commands (approve / reject) need to also notify
+        # Enkidu via the admin capability so the in-memory matcher refreshes
+        # and the replay path is unblocked. v0.3.2 leaves that wiring as a
+        # follow-up — for now the operator restarts Enkidu after standing
+        # changes, or calls the admin capability directly.
+        return int(await handler(args, store) or 0)
+    if cmd == "dep":
+        if args.subcmd == "list":
+            inventory = _get_inventory()
+            return int(await handler(args, inventory) or 0)
+        if args.subcmd == "ensure":
+            # Publish a SystemDepRequestedEvent on the bus.
+            from shared.events import SystemDepRequestedEvent
+            from shared import bus
+
+            async def request(pkg):
+                await bus.publish(
+                    SystemDepRequestedEvent(account_id="system", package=pkg)
+                )
+
+            return int(await handler(args, request=request) or 0)
+    raise SystemExit(f"unhandled approval/dep subcommand: {cmd}")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -639,6 +696,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         args.agents_yaml = _default_agents_yaml()
 
     try:
+        # approval / dep handlers are async and take a store/inventory, so
+        # they go through a separate dispatch path.
+        if getattr(args, "cmd", None) in ("approval", "dep"):
+            import asyncio
+
+            return asyncio.run(_run_approval_handler(args))
         return int(args.fn(args) or 0)
     except (SealedStoreError, UnlockError, OnboardError, ProvisionError) as e:
         print(f"error: {e}", file=sys.stderr)

@@ -190,6 +190,7 @@ def add_account_argv(channel: str, args: List[str]) -> List[str]:
         "gmail": "gmail_adapter.add_account",
         "calendar": "calendar_adapter.add_account",
         "whatsapp_cloud": "whatsapp_cloud_adapter.add_account",
+        "signal": "signal_adapter.add_account",
     }.get(channel)
     if module is None:
         raise OnboardError(

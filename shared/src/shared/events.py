@@ -217,6 +217,28 @@ class WebSearchResponseEvent(BaseEvent):
         return f"web.search.response.{self.request_id}"
 
 
+class SignalMessageEvent(BaseEvent):
+    """Inbound Signal message — published by the signal-adapter polling loop."""
+
+    source: Literal["signal"] = "signal"
+    msg_id: str
+    source_phone: Optional[str] = None
+    source_uuid: Optional[str] = None
+    source_name: Optional[str] = None
+    group_id: Optional[str] = None        # null for DMs
+    is_group: bool = False
+    text: str = ""
+    attachments: list = Field(default_factory=list)
+    timestamp: int = 0                     # signal-cli's ms-since-epoch
+    raw_ref: str = ""
+
+    @property
+    def topic(self) -> str:
+        if self.is_group and self.group_id:
+            return f"signal.message.received.{self.account_id}.group.{self.group_id}"
+        return f"signal.message.received.{self.account_id}"
+
+
 class PDFParseRequestedEvent(BaseEvent):
     """Async-path PDF parse request.
 
@@ -297,6 +319,7 @@ EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "approval.requested": ApprovalRequestedEvent,
     "pdf.parse.requested": PDFParseRequestedEvent,
     "pdf.parse.response": PDFParseResponseEvent,
+    "signal.message.received": SignalMessageEvent,
 }
 
 

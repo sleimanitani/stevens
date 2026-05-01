@@ -306,6 +306,12 @@ def cmd_onboard(args: argparse.Namespace) -> int:
             )
             print(f"WhatsApp Cloud app secret: {outcome}")
 
+    elif channel == "signal":
+        # Signal has no per-channel OAuth client to ingest — the
+        # signal-cli-rest-api daemon pairs once per phone via QR code.
+        # Anything operator-supplied lives in add_account_args (--phone, etc.).
+        pass
+
     else:
         raise SystemExit(f"unknown channel: {channel!r}")
 
@@ -541,7 +547,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     onb.add_argument(
         "channel",
-        choices=["gmail", "calendar", "whatsapp_cloud"],
+        choices=["gmail", "calendar", "whatsapp_cloud", "signal"],
         help="which channel to onboard",
     )
     _add_root_flag(onb)

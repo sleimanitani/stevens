@@ -124,6 +124,40 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  signal-cli-rest-api:
+    image: bbernhard/signal-cli-rest-api:latest
+    restart: unless-stopped
+    environment:
+      MODE: native    # native mode is fast; json-rpc mode supports more
+    volumes:
+      - signal-cli-data:/home/.local/share/signal-cli
+    ports:
+      # Only bound to localhost. The signal-adapter talks to it via the
+      # docker-internal network; the port is bound for QR-link inspection.
+      - "127.0.0.1:8084:8080"
+
+  signal-adapter:
+    build:
+      context: .
+      dockerfile: channels/signal/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      signal-cli-rest-api:
+        condition: service_started
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+      STEVENS_CALLER_NAME: signal_adapter
+      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/signal_adapter.key
+      SIGNAL_DAEMON_URL: http://signal-cli-rest-api:8080
+      # SIGNAL_ACCOUNT_ID + SIGNAL_PHONE supplied per-account at runtime
+      # (operator runs add_account first, then sets these env vars and
+      # restarts this service — multi-account is one container per phone).
+    volumes:
+      - stevens-sock:/run/stevens:ro
+
   agents:
     build:
       context: .
@@ -175,3 +209,4 @@ volumes:
   stevens-sock:
   stevens-audit:
   stevens-secrets:
+  signal-cli-data:

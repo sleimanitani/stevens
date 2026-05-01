@@ -2,9 +2,9 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.3.3-approval-cli-wiring` — close v0.3.2 CLI-auto-invoke gap + OpenClaw-shaped approval-forwarding config (1/5 upgrades from the OpenClaw/Hermes read-through).
-**Active Build Plan:** [`plans/v0.3.3-approval-cli-wiring.md`](plans/v0.3.3-approval-cli-wiring.md)
-**Queued (in order):** v0.3.4-arachne-upgrade · v0.4-sphinx · v0.4.1-channels-framework · v0.4.x-injection-guard.
+**Active milestone:** `v0.5-signal` — first new channel onto the v0.4.1 framework. Then Slack → Discord → Telegram → iMessage.
+**Active Build Plan:** [`plans/v0.5-signal.md`](plans/v0.5-signal.md)
+**Queued:** v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage. **OpenClaw Google integration audit: DON'T PORT** — our shape is better (multi-account, sealed-store creds, push-not-poll); see project memory.
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.

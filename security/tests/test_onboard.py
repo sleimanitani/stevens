@@ -178,4 +178,4 @@ def test_add_account_argv_known_channel() -> None:
 
 def test_add_account_argv_unknown_channel() -> None:
     with pytest.raises(OnboardError, match="unknown channel"):
-        add_account_argv("signal", [])
+        add_account_argv("matrix", [])  # not a registered channel yet

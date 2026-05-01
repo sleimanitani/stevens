@@ -34,6 +34,7 @@ Convention: pick a name from a coherent pantheon — currently mythological, wit
 | `email_pm` | *(unnamed)* | inbox triage agent |
 | `installer` | *(unnamed)* | system-package installer; proposes plans for Enkidu to execute |
 | `web` | **Arachne** | weaver of fetches and searches — async-path web agent (v0.3.1). Greek mythology: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
+| `pdf` | **Sphinx** | decoder of documents — PDF strategy router (v0.4). Greek mythology: poser/answerer of riddles; matches the "pick the right way to decode this document" framing. Routes between native pdfplumber, OCR fallback, and IBM Docling depending on the PDF and the request. |
 | `interface` (v0.2+) | *(unnamed)* | the agent that talks to Sol — uses the SOUL.md pattern |
 | subject agents (`berwyn_deal`, etc.) | *(unnamed)* | cross-channel agents per topic |
 

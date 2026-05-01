@@ -36,6 +36,13 @@ agents:
     model: none               # no LLM — async-path proxy
     enabled: true
 
+  - name: pdf                 # display name: Sphinx (see STEVENS.md §1.1)
+    subscribes:
+      - "pdf.parse.requested.*"
+    accounts: "all"
+    model: none               # no LLM — strategy router
+    enabled: true
+
   # Future agents go here:
   #
   # - name: berwyn_deal

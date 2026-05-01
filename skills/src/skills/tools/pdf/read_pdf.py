@@ -73,6 +73,21 @@ class ReadPDFInput(BaseModel):
         default=DEFAULT_OCR_THRESHOLD,
         description="Char count below which OCR fallback triggers",
     )
+    prefer_strategy: Optional[str] = Field(
+        default=None,
+        description=(
+            "Force a specific strategy: native_text / ocr_fallback / docling. "
+            "If omitted, the dispatcher inspects the PDF and picks one."
+        ),
+    )
+    request_hint: Optional[str] = Field(
+        default=None,
+        description=(
+            "Free-text description of what you're trying to get. Words like "
+            "'tables', 'formulas', 'layout', 'structure', 'complex' bias the "
+            "router toward Docling when available."
+        ),
+    )
 
 
 def _looks_like_header_row(row: List[Optional[str]]) -> bool:
@@ -228,16 +243,44 @@ def _ocr_pdf(pdf) -> str:
     return "\n".join(out)
 
 
+def _read_pdf_via_dispatcher(
+    path: str,
+    mode: str = "both",
+    ocr_fallback: bool = True,                     # legacy; ignored by dispatcher (strategies decide)
+    ocr_threshold_chars: int = DEFAULT_OCR_THRESHOLD,  # legacy; ignored
+    prefer_strategy: Optional[str] = None,
+    request_hint: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Tool entry point — routes through the strategy dispatcher.
+
+    Backwards-compatible: the legacy ``ocr_fallback`` / ``ocr_threshold_chars``
+    args are accepted (so existing callers don't break) but ignored —
+    the strategy router makes the OCR decision now via
+    ``prefer_strategy=ocr_fallback`` or by inspecting the PDF.
+    """
+    from .dispatcher import dispatch
+    from pathlib import Path as _Path
+
+    return dispatch(
+        _Path(path),
+        mode=mode,
+        hint=request_hint,
+        prefer=prefer_strategy,
+    )
+
+
 def build_tool() -> StructuredTool:
     return StructuredTool.from_function(
-        func=_read_pdf,
+        func=_read_pdf_via_dispatcher,
         name="read_pdf",
         description=(
-            "Extract text and tables from a PDF, including scanned PDFs "
-            "(OCR fallback) and tables that span multiple pages. Returns "
-            "{text, tables, pages, used_ocr, warnings}. Encrypted PDFs "
-            "return a structured error. Use this any time you encounter "
-            "a PDF — do not write your own PDF reader."
+            "Extract text and tables from a PDF. The dispatcher inspects the "
+            "PDF and picks the right strategy (native pdfplumber for text-layer "
+            "PDFs, OCR fallback for scanned, IBM Docling for complex layouts "
+            "when installed). Returns {text, tables, pages, used_ocr, warnings, "
+            "strategy_used, decision_reason}. Encrypted PDFs return a structured "
+            "error. Use ``prefer_strategy`` to force one; ``request_hint`` to "
+            "bias the router."
         ),
         args_schema=ReadPDFInput,
     )

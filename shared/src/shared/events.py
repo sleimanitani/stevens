@@ -217,6 +217,44 @@ class WebSearchResponseEvent(BaseEvent):
         return f"web.search.response.{self.request_id}"
 
 
+class PDFParseRequestedEvent(BaseEvent):
+    """Async-path PDF parse request.
+
+    Sphinx subscribes to ``pdf.parse.requested.*`` and publishes a paired
+    ``PDFParseResponseEvent`` to ``pdf.parse.response.<request_id>``.
+    """
+
+    source: Literal["agent"] = "agent"
+    request_id: str
+    path: str
+    requested_by: str
+    mode: str = "both"
+    prefer_strategy: Optional[str] = None
+    request_hint: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"pdf.parse.requested.{self.request_id}"
+
+
+class PDFParseResponseEvent(BaseEvent):
+    source: Literal["sphinx"] = "sphinx"
+    request_id: str
+    text: Optional[str] = None
+    tables: list = Field(default_factory=list)
+    pages: int = 0
+    used_ocr: bool = False
+    strategy_used: Optional[str] = None
+    decision_reason: Optional[str] = None
+    warnings: list = Field(default_factory=list)
+    error: Optional[str] = None
+    error_detail: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"pdf.parse.response.{self.request_id}"
+
+
 class ApprovalRequestedEvent(BaseEvent):
     """Per-call approval enqueued by Enkidu — published per matching forwarding target.
 
@@ -257,6 +295,8 @@ EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "web.search.requested": WebSearchRequestedEvent,
     "web.search.response": WebSearchResponseEvent,
     "approval.requested": ApprovalRequestedEvent,
+    "pdf.parse.requested": PDFParseRequestedEvent,
+    "pdf.parse.response": PDFParseResponseEvent,
 }
 
 

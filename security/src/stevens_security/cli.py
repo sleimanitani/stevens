@@ -204,6 +204,14 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_channels_list(args: argparse.Namespace) -> int:
+    """Print the channel registry — what's shipped vs planned + runbook paths."""
+    from . import channels_list
+
+    print(channels_list.render())
+    return 0
+
+
 def cmd_reset(args: argparse.Namespace) -> int:
     """Wipe local Stevens state for fresh-install testing.
 
@@ -832,6 +840,14 @@ def build_parser() -> argparse.ArgumentParser:
     rst.add_argument("--keep-postgres", action="store_true")
     rst.add_argument("--keep-pdf-corpus", action="store_true")
     rst.set_defaults(fn=cmd_reset)
+
+    # channels — discoverability for the new-user experience
+    chs = top.add_parser(
+        "channels", help="discover channels you can onboard",
+    )
+    chs_sub = chs.add_subparsers(dest="subcmd", required=True)
+    chs_list = chs_sub.add_parser("list", help="print the channel registry")
+    chs_list.set_defaults(fn=cmd_channels_list)
 
     # janus — operator-assisted browser automation
     cha = top.add_parser(

@@ -1,6 +1,9 @@
-# Runbook — Gmail OAuth setup (with sealed store)
+# Runbook — Gmail OAuth setup (with sealed store) — **SUPERSEDED**
 
-Supersedes `DEVELOPMENT.md` §2a wherever the two disagree.
+> **⚠️ This runbook is from v0.1-sec era and predates `stevens wizard google` + `stevens janus`.**
+> **Use [`gmail.md`](gmail.md) instead.** This file is kept for git history; the modern path is shorter.
+
+---
 
 Goal: get Stevens's Security Agent holding the Gmail OAuth credentials so the Email PM agent can draft replies without ever seeing a raw token.
 

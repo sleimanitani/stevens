@@ -198,7 +198,30 @@ reference is queued up:
   in a header comment. **Not on the v0.3.x roadmap;** lands when a
   research/subject agent needs JS-rendered content.
 
-## 10. References
+## 10. User-supplied prompt content (SOUL.md / USER.md / AGENTS.md)
+
+Future agents — most importantly the v0.2+ **interface agent** that talks to Sol directly — will inject several user-supplied or repo-supplied markdown files into their system prompt. The pattern (borrowed from OpenClaw + Hermes) is:
+
+| File | Content | Editor | Lifecycle |
+|---|---|---|---|
+| `SOUL.md` | the agent's voice + values + tone — "how does Sol speak" | Sol | rarely; major revisions only |
+| `USER.md` | stable human context: timezone, projects, names, preferences | Sol | as life changes |
+| `AGENTS.md` | repo / project rules (this repo uses `CLAUDE.md` for the same role) | dev | as conventions evolve |
+
+All of these load via `shared.prompt_safety.safe_load_user_markdown(path)`, which:
+
+1. Reads the file.
+2. Strips YAML frontmatter (callers don't want it injected into prompts).
+3. Runs `scan_for_injection` against the body.
+4. On `severity=ok` → returns the text.
+5. On `severity=warn` → returns a redacted variant (suspicious blocks replaced by `[REDACTED:<reason>]` markers); caller decides whether to log.
+6. On `severity=refuse` → raises `InjectionRefused`. Caller must not load.
+
+The scanner is regex + structural-pattern based (no LLM); detection is deliberate fail-closed (false-positives preferable to false-negatives at this layer). Patterns cover: "ignore previous instructions" + variants, system-prompt impersonation (`</system>`, `<|system|>`, `[SYSTEM]`), tool-call injection markers (`<tool_call>`, `<function_call>`), credential-read patterns, hidden HTML divs (`display: none`, `visibility: hidden`), suspiciously long contiguous base64 blobs, and "override / disregard / forget" + instruction-noun.
+
+This isn't only for SOUL.md / USER.md. Any user-supplied or third-party text that flows into a prompt — fetched web content used directly in-prompt, email body content injected as context, etc. — should pass through `scan_for_injection` first. The interface agent ships first; subject agents and future research agents inherit the pattern.
+
+## 11. References
 
 - STEVENS.md §2 (Principles), §3.11.1 (Skills vs. capabilities).
 - `docs/protocols/approvals.md` — when an agent wants to do something approval-gated.

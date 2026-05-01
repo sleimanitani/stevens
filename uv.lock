@@ -3196,12 +3196,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-charon = [
-    { name = "playwright" },
-]
 dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
+]
+janus = [
+    { name = "playwright" },
 ]
 
 [package.metadata]
@@ -3209,7 +3209,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "keyring", specifier = ">=24" },
     { name = "msgpack", specifier = ">=1.0" },
-    { name = "playwright", marker = "extra == 'charon'", specifier = ">=1.40" },
+    { name = "playwright", marker = "extra == 'janus'", specifier = ">=1.40" },
     { name = "pynacl", specifier = ">=1.5" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
@@ -3217,7 +3217,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "shared", editable = "shared" },
 ]
-provides-extras = ["dev", "charon"]
+provides-extras = ["dev", "janus"]
 
 [[package]]
 name = "tenacity"

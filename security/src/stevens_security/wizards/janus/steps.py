@@ -1,4 +1,4 @@
-"""Step types for Charon recipes — the recipe DSL."""
+"""Step types for Janus recipes — the recipe DSL."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ class StoreSecret:
 
     slot: str
     secret_name: str
-    metadata_kind: str = "charon_extracted"
+    metadata_kind: str = "janus_extracted"
 
 
 Step = Union[Nav, WaitFor, Fill, Click, OperatorAction, Extract, StoreSecret]

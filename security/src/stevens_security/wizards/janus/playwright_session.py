@@ -1,10 +1,10 @@
 """Playwright-backed BrowserSession.
 
 Lazy-imports playwright so the security package can be imported without
-playwright installed (operators who never run Charon don't pay the
+playwright installed (operators who never run Janus don't pay the
 ~150MB install cost).
 
-Persistent context dir: ``~/.config/stevens/charon-profile/`` — keeps
+Persistent context dir: ``~/.config/stevens/janus-profile/`` — keeps
 cookies + sign-ins across runs so the operator doesn't re-auth each
 time.
 """
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 def _profile_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "stevens" / "charon-profile"
+    return Path(base) / "stevens" / "janus-profile"
 
 
 class PlaywrightSession:
@@ -55,7 +55,7 @@ class PlaywrightSession:
 async def open_chromium(*, headless: bool = False) -> AsyncIterator[PlaywrightSession]:
     """Open a Chromium browser with a persistent profile dir.
 
-    Operator typically runs Charon headed (default); headless=True is
+    Operator typically runs Janus headed (default); headless=True is
     for advanced uses where the operator pre-signed-in and just wants
     the rest of the recipe to play.
     """

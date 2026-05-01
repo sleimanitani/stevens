@@ -3,14 +3,14 @@
 End state: an API key landed in the sealed store as ``web.brave.api_key``.
 
 Operator interaction during the run:
-1. Sign in / sign up at https://api.search.brave.com (Charon opens it,
+1. Sign in / sign up at https://api.search.brave.com (Janus opens it,
    then pauses for you).
-2. Click "Continue to dashboard" (Charon clicks if it can find the
+2. Click "Continue to dashboard" (Janus clicks if it can find the
    button; otherwise pauses).
-3. Click "Create new API key" (Charon clicks).
-4. Name it (Charon fills "Stevens").
-5. Click Generate (Charon clicks).
-6. Copy the key shown — Charon extracts it into the slot, then writes
+3. Click "Create new API key" (Janus clicks).
+4. Name it (Janus fills "Stevens").
+5. Click Generate (Janus clicks).
+6. Copy the key shown — Janus extracts it into the slot, then writes
    to sealed store.
 
 If selectors break, the recipe surfaces a clear "selector not found:

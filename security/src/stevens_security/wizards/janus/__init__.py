@@ -1,10 +1,10 @@
-"""Charon — operator-assisted browser automation for OAuth/config dances.
+"""Janus — operator-assisted browser automation for OAuth/config dances.
 
 Operator owns the browser session (signs in, approves OAuth, solves
-CAPTCHAs); Charon does everything else (nav, fill, click, extract
+CAPTCHAs); Janus does everything else (nav, fill, click, extract
 token, store in sealed store).
 
-Greek mythology: Charon ferries souls across the Styx to where they
+Greek mythology: Janus ferries souls across the Styx to where they
 need to go. Maps to: ferries the operator across to a new system they
 need access to.
 

@@ -204,9 +204,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_charon_list(args: argparse.Namespace) -> int:
-    """List registered Charon recipes with descriptions + prerequisites."""
-    from .wizards.charon import get, known
+def cmd_janus_list(args: argparse.Namespace) -> int:
+    """List registered Janus recipes with descriptions + prerequisites."""
+    from .wizards.janus import get, known
 
     names = known()
     if not names:
@@ -222,12 +222,12 @@ def cmd_charon_list(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_charon_run(args: argparse.Namespace) -> int:
-    """Run a Charon recipe end-to-end."""
+def cmd_janus_run(args: argparse.Namespace) -> int:
+    """Run a Janus recipe end-to-end."""
     import asyncio
 
-    from .wizards.charon import RecipeError, get
-    from .wizards.charon.runner import execute_recipe
+    from .wizards.janus import RecipeError, get
+    from .wizards.janus.runner import execute_recipe
 
     try:
         recipe = get(args.recipe)
@@ -273,7 +273,7 @@ def cmd_charon_run(args: argparse.Namespace) -> int:
     if args.project_id:
         recipe_kwargs["project_id"] = args.project_id
 
-    from .wizards.charon.playwright_session import open_chromium
+    from .wizards.janus.playwright_session import open_chromium
 
     async def _run() -> int:
         async with open_chromium(headless=args.headless) as session:
@@ -774,18 +774,18 @@ def build_parser() -> argparse.ArgumentParser:
                     help="where to watch for the downloaded client_secret*.json")
     wg.set_defaults(fn=cmd_wizard_google)
 
-    # charon — operator-assisted browser automation
+    # janus — operator-assisted browser automation
     cha = top.add_parser(
-        "charon",
+        "janus",
         help="operator-assisted browser automation for OAuth/config dances",
     )
     cha_sub = cha.add_subparsers(dest="subcmd", required=True)
 
     cha_list = cha_sub.add_parser("list", help="list available recipes")
-    cha_list.set_defaults(fn=cmd_charon_list)
+    cha_list.set_defaults(fn=cmd_janus_list)
 
     cha_run = cha_sub.add_parser("run", help="run a recipe")
-    cha_run.add_argument("recipe", help="recipe name (see `stevens charon list`)")
+    cha_run.add_argument("recipe", help="recipe name (see `stevens janus list`)")
     cha_run.add_argument(
         "--rotate", action="store_true",
         help="overwrite an existing sealed-store secret if the recipe writes one",
@@ -799,7 +799,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="hide the browser (advanced; default is headed so you can sign in)",
     )
     _add_root_flag(cha_run)
-    cha_run.set_defaults(fn=cmd_charon_run)
+    cha_run.set_defaults(fn=cmd_janus_run)
 
     return parser
 

@@ -5,7 +5,7 @@ with consent screen configured (External + Production + the four scopes
 Stevens needs), and a ``client_secret*.json`` downloaded to the
 operator's Downloads folder.
 
-The download itself uses the browser's native save dialog — Charon can't
+The download itself uses the browser's native save dialog — Janus can't
 intercept that. Operator clicks "Download JSON" when prompted; the v0.6
 wizard's ``wait_for_client_json`` picks up from there.
 
@@ -51,7 +51,7 @@ class GoogleOAuthClientRecipe:
     )
     prerequisites = [
         "a GCP project (run `stevens wizard google` first to create one)",
-        "you're already signed into Google in the browser Charon will open",
+        "you're already signed into Google in the browser Janus will open",
     ]
 
     def available(self) -> bool:

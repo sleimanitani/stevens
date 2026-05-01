@@ -204,6 +204,46 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_reset(args: argparse.Namespace) -> int:
+    """Wipe local Stevens state for fresh-install testing.
+
+    Default (no flags) is dry-run — prints what would be wiped and exits.
+    --yes prompts for one final confirmation then executes.
+    --force skips the prompt (for scripts).
+    """
+    import asyncio
+
+    from .reset import build_plan, execute_plan, post_wipe_next_steps
+
+    plan = build_plan(
+        keep_sealed=args.keep_sealed,
+        keep_audit=args.keep_audit,
+        keep_agents=args.keep_agents,
+        keep_janus_profile=args.keep_janus_profile,
+        keep_keyring=args.keep_keyring,
+        keep_postgres=args.keep_postgres,
+        keep_pdf_corpus=args.keep_pdf_corpus,
+    )
+    print(plan.render())
+
+    if not args.yes and not args.force:
+        print("\n(this was a dry run — pass --yes to actually wipe, or --force to skip the confirm)")
+        return 0
+
+    if not args.force:
+        ans = input("\nType 'wipe' to confirm: ").strip().lower()
+        if ans != "wipe":
+            print("aborted; nothing changed")
+            return 1
+
+    print("\nexecuting...")
+    results = asyncio.run(execute_plan(plan))
+    for line in results:
+        print(line)
+    print(post_wipe_next_steps())
+    return 0
+
+
 def cmd_janus_list(args: argparse.Namespace) -> int:
     """List registered Janus recipes with descriptions + prerequisites."""
     from .wizards.janus import get, known
@@ -773,6 +813,25 @@ def build_parser() -> argparse.ArgumentParser:
     wg.add_argument("--downloads-dir", type=Path, default=None,
                     help="where to watch for the downloaded client_secret*.json")
     wg.set_defaults(fn=cmd_wizard_google)
+
+    # reset — wipe local Stevens state for fresh-install testing
+    rst = top.add_parser(
+        "reset",
+        help="wipe local Stevens state (sealed store, audit, keyring, PG tables, "
+             "Janus profile) for fresh-install testing. Defaults to dry-run.",
+    )
+    rst.add_argument("--yes", action="store_true",
+                     help="actually execute the wipe (asks for one final confirm)")
+    rst.add_argument("--force", action="store_true",
+                     help="skip the final confirm (for scripts)")
+    rst.add_argument("--keep-sealed", action="store_true")
+    rst.add_argument("--keep-audit", action="store_true")
+    rst.add_argument("--keep-agents", action="store_true")
+    rst.add_argument("--keep-janus-profile", action="store_true")
+    rst.add_argument("--keep-keyring", action="store_true")
+    rst.add_argument("--keep-postgres", action="store_true")
+    rst.add_argument("--keep-pdf-corpus", action="store_true")
+    rst.set_defaults(fn=cmd_reset)
 
     # janus — operator-assisted browser automation
     cha = top.add_parser(

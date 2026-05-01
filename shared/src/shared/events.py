@@ -217,6 +217,31 @@ class WebSearchResponseEvent(BaseEvent):
         return f"web.search.response.{self.request_id}"
 
 
+class ApprovalRequestedEvent(BaseEvent):
+    """Per-call approval enqueued by Enkidu — published per matching forwarding target.
+
+    A future "approval forwarder" agent subscribes to ``approval.requested.*``
+    and routes the human-readable summary to the target chat channel
+    (Gmail draft, WhatsApp message, etc.) so Sol can decide without
+    sitting at the CLI. v0.3.3 only emits the event; the forwarder is a
+    later milestone.
+    """
+
+    source: Literal["enkidu"] = "enkidu"
+    request_id: str
+    capability: str
+    caller: str
+    params_summary: str
+    rationale: Optional[str] = None
+    target_channel: str         # e.g. "gmail" / "whatsapp_cloud" / "session"
+    target_account_id: str
+    target_thread_id: Optional[str] = None
+
+    @property
+    def topic(self) -> str:
+        return f"approval.requested.{self.request_id}"
+
+
 # Registry of all known event types, keyed by topic pattern prefix.
 # Used by the bus to deserialize events into the right Pydantic model.
 EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
@@ -231,6 +256,7 @@ EVENT_REGISTRY: dict[str, type[BaseEvent]] = {
     "web.fetch.response": WebFetchResponseEvent,
     "web.search.requested": WebSearchRequestedEvent,
     "web.search.response": WebSearchResponseEvent,
+    "approval.requested": ApprovalRequestedEvent,
 }
 
 

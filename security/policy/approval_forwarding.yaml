@@ -1,0 +1,25 @@
+# Approval forwarding — when a per-call approval is enqueued, optionally
+# publish ``approval.requested.<id>`` events to one or more configured
+# targets so a chat-channel-bound consumer (a future "approval forwarder"
+# agent) can route notifications to where Sol actually reads them.
+#
+# Shape borrowed from OpenClaw's exec-approval forwarding.
+#
+# rules:
+#   - mode: session | targets | both
+#       # session: forward to the channel that originated the call
+#       # targets: forward to the fixed target list
+#       # both: do both
+#     agent_filter: [installer, email_pm]   # optional; matches r.caller; absent = all
+#     capability_filter: ["system.*"]        # optional; fnmatch globs against r.capability
+#     targets:                                # required iff mode != session
+#       - channel: gmail
+#         account_id: gmail.personal
+#         thread_id: null         # null = create new thread / DM
+#       - channel: whatsapp_cloud
+#         account_id: wac.business1
+#
+# Empty rules (the default below) means no forwarding events are emitted —
+# approvals only show up in `stevens approval list`.
+
+rules: []

@@ -111,8 +111,16 @@ async def cmd_approval_show(args, store: ApprovalStore) -> int:
 
 async def cmd_approval_approve(
     args, store: ApprovalStore, *, decided_by: str = "operator",
+    admin=None,
 ) -> int:
-    """Approve a pending request. Optionally promote to standing."""
+    """Approve a pending request. Optionally promote to standing.
+
+    On success, fires ``_admin.mark_request_approved`` against a running
+    Enkidu so the replay envelope is allowed through the gate, and
+    ``_admin.refresh_approvals`` if a standing grant was promoted. If
+    ``admin`` is None, attempts ``AdminClient.try_create()``; if Enkidu
+    isn't running it's a no-op with a log line.
+    """
     r = await store.get_request(args.id)
     if r is None:
         print(f"no request with id {args.id}", file=sys.stderr)
@@ -162,6 +170,13 @@ async def cmd_approval_approve(
         promoted_standing_id=promoted_id,
     )
     print(f"approved {args.id}")
+
+    # Nudge a running Enkidu (best-effort).
+    admin = admin if admin is not None else _try_admin_client()
+    if admin is not None:
+        await admin.mark_request_approved(args.id)
+        if promoted_id:
+            await admin.refresh_approvals()
     return 0
 
 
@@ -180,6 +195,13 @@ async def cmd_approval_reject(
     return 0
 
 
+def _try_admin_client():
+    """Lazy import — keeps cli_approvals importable without security_client wiring."""
+    from .admin_client import AdminClient
+
+    return AdminClient.try_create()
+
+
 async def cmd_approval_standing_list(args, store: ApprovalStore) -> int:
     items = await store.list_standing(include_revoked=args.include_revoked)
     print(fmt_standing(items))
@@ -188,6 +210,7 @@ async def cmd_approval_standing_list(args, store: ApprovalStore) -> int:
 
 async def cmd_approval_standing_grant(
     args, store: ApprovalStore, *, granted_by: str = "operator",
+    admin=None,
 ) -> int:
     predicates = {}
     if args.mechanism:
@@ -224,11 +247,15 @@ async def cmd_approval_standing_grant(
     print(f"granted standing approval {sa.id} for {sa.capability} caller={sa.caller}")
     if predicates:
         print(f"  predicates: {predicates}")
+    admin = admin if admin is not None else _try_admin_client()
+    if admin is not None:
+        await admin.refresh_approvals()
     return 0
 
 
 async def cmd_approval_standing_revoke(
     args, store: ApprovalStore, *, revoked_by: str = "operator",
+    admin=None,
 ) -> int:
     try:
         sa = await store.revoke_standing(standing_id=args.id, revoked_by=revoked_by)
@@ -236,6 +263,9 @@ async def cmd_approval_standing_revoke(
         print(f"error: {e}", file=sys.stderr)
         return 1
     print(f"revoked standing approval {sa.id}")
+    admin = admin if admin is not None else _try_admin_client()
+    if admin is not None:
+        await admin.refresh_approvals()
     return 0
 
 

@@ -2,14 +2,16 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.3.2-postgres` — production wiring for the v0.3 primitives (Postgres-backed `ApprovalStore`, `PlanStore`, `Inventory`; CLI talks to real DB; `db_migrate.sh` runner).
-**Active Build Plan:** [`plans/v0.3.2-postgres.md`](plans/v0.3.2-postgres.md)
+**Active milestone:** `v0.3.3-approval-cli-wiring` — close v0.3.2 CLI-auto-invoke gap + OpenClaw-shaped approval-forwarding config (1/5 upgrades from the OpenClaw/Hermes read-through).
+**Active Build Plan:** [`plans/v0.3.3-approval-cli-wiring.md`](plans/v0.3.3-approval-cli-wiring.md)
+**Queued (in order):** v0.3.4-arachne-upgrade · v0.4-sphinx · v0.4.1-channels-framework · v0.4.x-injection-guard.
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.
 - [`plans/v0.2-skills.md`](plans/v0.2-skills.md) — shared skills layer, `d03a547`.
 - [`plans/v0.3-installer-and-approvals.md`](plans/v0.3-installer-and-approvals.md) — approvals primitive + installer, `c2f0929`.
 - [`plans/v0.3.1-web.md`](plans/v0.3.1-web.md) — Arachne + network.fetch/search, `8d1f64a`.
+- [`plans/v0.3.2-postgres.md`](plans/v0.3.2-postgres.md) — Postgres wiring, `902f0d8`.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped

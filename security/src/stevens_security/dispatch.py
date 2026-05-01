@@ -42,6 +42,8 @@ def build_dispatcher(
     nonce_cache: NonceCache,
     context: Optional[CapabilityContext] = None,
     matcher: Optional[MatcherIndex] = None,
+    forwarding_config=None,
+    forwarding_publisher=None,
     approval_queue: Optional[ApprovalQueue] = None,
     bypass_approval_for_request_id: Optional[Callable[[str], bool]] = None,
 ) -> Dispatcher:
@@ -163,6 +165,21 @@ def build_dispatcher(
                     blocked_trace_id=trace_id,
                 )
                 await approval_queue.enqueue(request=approval_request)
+                # Best-effort approval-forwarding publish (per-target events).
+                if forwarding_config is not None and forwarding_publisher is not None:
+                    try:
+                        from .approvals.forwarding import matching_targets
+
+                        targets = matching_targets(
+                            forwarding_config, approval_request,
+                            origin_channel=None,  # not derivable from envelope; future
+                            origin_account_id=account_id,
+                        )
+                        for target in targets:
+                            await forwarding_publisher(approval_request, target)
+                    except Exception:  # noqa: BLE001
+                        # Forwarding is best-effort; never block the BLOCKED return.
+                        pass
                 await audit_writer.log(
                     AuditEntry(
                         ts=ts, trace_id=trace_id, outcome="blocked",

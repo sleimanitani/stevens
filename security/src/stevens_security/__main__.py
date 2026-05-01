@@ -144,6 +144,38 @@ async def _amain() -> int:
     # the replayed envelope through the gate.
     approved_replay_ids: set = set()
 
+    # Approval-forwarding config + publisher (best-effort).
+    forwarding_config = None
+    forwarding_publisher = None
+    try:
+        from .approvals.forwarding import load_config
+
+        forwarding_config = load_config()
+        if forwarding_config.rules:
+            from shared import bus as _bus
+            from shared.events import ApprovalRequestedEvent as _AReq
+
+            async def _publisher(approval_request, target):
+                try:
+                    await _bus.publish(_AReq(
+                        account_id=target.account_id,
+                        request_id=approval_request.id,
+                        capability=approval_request.capability,
+                        caller=approval_request.caller,
+                        params_summary=approval_request.params_summary,
+                        rationale=approval_request.rationale,
+                        target_channel=target.channel,
+                        target_account_id=target.account_id,
+                        target_thread_id=target.thread_id,
+                    ))
+                except Exception:  # noqa: BLE001
+                    log.warning("approval forwarding publish failed", exc_info=True)
+
+            forwarding_publisher = _publisher
+            log.info("approval forwarding: %d rule(s) loaded", len(forwarding_config.rules))
+    except Exception as e:  # noqa: BLE001
+        log.warning("approval forwarding disabled: %s", e)
+
     dispatcher = build_dispatcher(
         identity_registry=identity_registry,
         policy=policy,
@@ -154,6 +186,8 @@ async def _amain() -> int:
         matcher=matcher,
         approval_queue=approval_queue,
         bypass_approval_for_request_id=lambda rid: rid in approved_replay_ids,
+        forwarding_config=forwarding_config,
+        forwarding_publisher=forwarding_publisher,
     )
 
     # Stash references so the admin capability can refresh / replay.

@@ -204,6 +204,105 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_charon_list(args: argparse.Namespace) -> int:
+    """List registered Charon recipes with descriptions + prerequisites."""
+    from .wizards.charon import get, known
+
+    names = known()
+    if not names:
+        print("(no recipes registered)")
+        return 0
+    for n in names:
+        r = get(n)
+        avail = "OK" if r.available() else "playwright not installed"
+        print(f"  {n:<28} [{avail}]")
+        print(f"      {r.description}")
+        for prereq in r.prerequisites:
+            print(f"      - prereq: {prereq}")
+    return 0
+
+
+def cmd_charon_run(args: argparse.Namespace) -> int:
+    """Run a Charon recipe end-to-end."""
+    import asyncio
+
+    from .wizards.charon import RecipeError, get
+    from .wizards.charon.runner import execute_recipe
+
+    try:
+        recipe = get(args.recipe)
+    except RecipeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    if not recipe.available():
+        print("error: playwright not installed. run:", file=sys.stderr)
+        print("  uv pip install playwright && uv run playwright install chromium",
+              file=sys.stderr)
+        return 1
+
+    pp = _get_passphrase()
+    sealed = SealedStore.unlock(args.root, pp)
+
+    # Sealed-store writer with --rotate semantics.
+    async def write_secret(name: str, value: str, metadata: dict) -> None:
+        if not args.rotate:
+            try:
+                sealed.get_by_name(name)
+            except Exception:
+                pass
+            else:
+                raise RuntimeError(
+                    f"secret {name!r} already exists; pass --rotate to overwrite"
+                )
+        if args.rotate:
+            try:
+                old = sealed.ref_by_name(name)
+                sealed.rotate(old.id, value.encode("utf-8"))
+                return
+            except Exception:
+                pass
+        sealed.add(name, value.encode("utf-8"), metadata=metadata)
+
+    # Operator prompt callback.
+    async def ask(message: str) -> bool:
+        print(f"\n>>> {message}")
+        ans = input("    Press Enter to continue, or type 'abort': ").strip().lower()
+        return ans != "abort"
+
+    recipe_kwargs = {}
+    if args.project_id:
+        recipe_kwargs["project_id"] = args.project_id
+
+    from .wizards.charon.playwright_session import open_chromium
+
+    async def _run() -> int:
+        async with open_chromium(headless=args.headless) as session:
+            result = await execute_recipe(
+                recipe,
+                session=session,
+                ask_operator=ask,
+                write_secret=write_secret,
+                recipe_kwargs=recipe_kwargs,
+            )
+        if result.stored_secrets:
+            print(f"\nrecipe {recipe.name!r} done. Stored secrets:")
+            for s in result.stored_secrets:
+                print(f"  - {s}")
+        else:
+            print(f"\nrecipe {recipe.name!r} done. (No secrets stored — recipe "
+                  "completes the operator-side workflow without writing anything.)")
+        return 0
+
+    try:
+        return asyncio.run(_run())
+    except RecipeError as e:
+        print(f"recipe failed: {e}", file=sys.stderr)
+        return 1
+    except RuntimeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+
+
 def cmd_wizard_google(args: argparse.Namespace) -> int:
     """Run the Google Cloud onboarding wizard, then chain into stevens onboard gmail."""
     from .wizards.google import WizardError, WizardInputs, run_wizard
@@ -674,6 +773,33 @@ def build_parser() -> argparse.ArgumentParser:
     wg.add_argument("--downloads-dir", type=Path, default=None,
                     help="where to watch for the downloaded client_secret*.json")
     wg.set_defaults(fn=cmd_wizard_google)
+
+    # charon — operator-assisted browser automation
+    cha = top.add_parser(
+        "charon",
+        help="operator-assisted browser automation for OAuth/config dances",
+    )
+    cha_sub = cha.add_subparsers(dest="subcmd", required=True)
+
+    cha_list = cha_sub.add_parser("list", help="list available recipes")
+    cha_list.set_defaults(fn=cmd_charon_list)
+
+    cha_run = cha_sub.add_parser("run", help="run a recipe")
+    cha_run.add_argument("recipe", help="recipe name (see `stevens charon list`)")
+    cha_run.add_argument(
+        "--rotate", action="store_true",
+        help="overwrite an existing sealed-store secret if the recipe writes one",
+    )
+    cha_run.add_argument(
+        "--project-id", default=None,
+        help="passed to recipes that need it (e.g. google_oauth_client)",
+    )
+    cha_run.add_argument(
+        "--headless", action="store_true",
+        help="hide the browser (advanced; default is headed so you can sign in)",
+    )
+    _add_root_flag(cha_run)
+    cha_run.set_defaults(fn=cmd_charon_run)
 
     return parser
 

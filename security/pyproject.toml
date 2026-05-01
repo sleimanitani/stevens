@@ -18,6 +18,12 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
 ]
+charon = [
+    # Playwright-driven operator-assisted browser automation.
+    # Operators who never run `stevens charon` don't pay the install cost.
+    # Install: `uv sync --extra charon` then `uv run playwright install chromium`.
+    "playwright>=1.40",
+]
 
 [project.scripts]
 stevens = "stevens_security.cli:main"

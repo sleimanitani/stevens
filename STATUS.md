@@ -2,9 +2,9 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.5-signal` — first new channel onto the v0.4.1 framework. Then Slack → Discord → Telegram → iMessage.
-**Active Build Plan:** [`plans/v0.5-signal.md`](plans/v0.5-signal.md)
-**Queued:** v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage. **OpenClaw Google integration audit: DON'T PORT** — our shape is better (multi-account, sealed-store creds, push-not-poll); see project memory.
+**Active milestone:** `v0.6-google-wizard` — `stevens wizard google` shrinks GCP onboarding from ~8 manual steps to 3.
+**Active Build Plan:** [`plans/v0.6-google-wizard.md`](plans/v0.6-google-wizard.md)
+**Queued:** v0.7-charon (general OAuth onboarder agent with Playwright) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage.
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.

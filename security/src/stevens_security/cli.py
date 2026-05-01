@@ -204,6 +204,32 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_wizard_google(args: argparse.Namespace) -> int:
+    """Run the Google Cloud onboarding wizard, then chain into stevens onboard gmail."""
+    from .wizards.google import WizardError, WizardInputs, run_wizard
+
+    inputs = WizardInputs(
+        project_id=args.project_id,
+        project_name=args.project_name,
+        push_endpoint=args.push_endpoint,
+        downloads_dir=args.downloads_dir,
+    )
+    try:
+        result = run_wizard(inputs)
+    except WizardError as e:
+        print(f"wizard error: {e}", file=sys.stderr)
+        return 1
+    print()
+    print("Wizard complete. To finish onboarding a Gmail account, run:")
+    print(
+        f"  uv run stevens onboard gmail --client-json {result.client_secret_path} "
+        f"-- --id gmail.personal --name 'Sol personal'"
+    )
+    print()
+    print("(Then `stevens onboard calendar` for Calendar onboarding using the same client.)")
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Run diagnostic checks. Returns non-zero if any non-info check fails."""
     from . import doctor
@@ -634,6 +660,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     cli_approvals.add_approval_parser(top)
     cli_approvals.add_dep_parser(top)
+
+    # wizard
+    wiz = top.add_parser("wizard", help="multi-step setup wizards (Google, …)")
+    wiz_sub = wiz.add_subparsers(dest="subcmd", required=True)
+
+    wg = wiz_sub.add_parser("google", help="Google Cloud onboarding wizard")
+    wg.add_argument("--project-id", required=True,
+                    help="GCP project id to create or reuse (e.g. stevens-personal)")
+    wg.add_argument("--project-name", default=None)
+    wg.add_argument("--push-endpoint", default=None,
+                    help="public push-receiver URL for Gmail webhook")
+    wg.add_argument("--downloads-dir", type=Path, default=None,
+                    help="where to watch for the downloaded client_secret*.json")
+    wg.set_defaults(fn=cmd_wizard_google)
 
     return parser
 

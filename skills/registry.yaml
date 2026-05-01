@@ -59,6 +59,12 @@ tools:
     safety_class: read-only
     version: 1.0.0
 
+  - id: web.compress
+    path: skills/src/skills/tools/web/compress.py
+    scope: shared
+    safety_class: read-only
+    version: 1.0.0
+
 playbooks:
   - id: email/appointment_request
     path: skills/src/skills/playbooks/email/appointment_request.md

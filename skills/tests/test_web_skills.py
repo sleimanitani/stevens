@@ -73,6 +73,44 @@ def test_fetch_skill_surfaces_capability_error():
     assert decoded["error"] == "url_rejected"
 
 
+def test_fetch_with_compress_returns_both():
+    fc = FakeClient({
+        "network.fetch": {
+            "status": 200, "body": b"long page" * 100,
+            "final_url": "https://x.com/", "cache_hit": False,
+        },
+        "network.compress": {
+            "compressed_text": "the gist", "ratio": 0.05, "backend": "anthropic",
+        },
+    })
+    _set_client_for_tests(fc)
+    tool = build_fetch_tool()
+    out = tool.invoke({
+        "url": "https://x.com/",
+        "compress_with_query": "what's the gist",
+    })
+    decoded = json.loads(out)
+    assert decoded["body"].startswith("long page")
+    assert decoded["compressed_body"] == "the gist"
+    assert decoded["compressed_ratio"] == 0.05
+
+
+def test_compress_skill_returns_extract():
+    from skills.tools.web.compress import (
+        _set_client_for_tests as _set_compress_client,
+        build_tool as build_compress_tool,
+    )
+
+    fc = FakeClient({"network.compress": {
+        "compressed_text": "extract", "ratio": 0.1, "backend": "anthropic",
+    }})
+    _set_compress_client(fc)
+    tool = build_compress_tool()
+    out = tool.invoke({"text": "long stuff", "query": "what"})
+    decoded = json.loads(out)
+    assert decoded["compressed_text"] == "extract"
+
+
 def test_search_skill_returns_results():
     fc = FakeClient({"network.search": {
         "backend": "brave",

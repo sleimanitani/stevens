@@ -40,6 +40,15 @@ class FetchInput(BaseModel):
         default=True,
         description="Follow same-origin redirects up to a small depth (cross-origin redirects are never followed)",
     )
+    compress_with_query: Optional[str] = Field(
+        default=None,
+        description=(
+            "If set, the fetched body is piped through network.compress with this "
+            "query and the compressed extract is returned in the `compressed_body` "
+            "field alongside the raw body. Use this for long pages where you only "
+            "need the parts relevant to a specific question."
+        ),
+    )
 
 
 _CLIENT: Optional[SecurityClient] = None
@@ -65,15 +74,21 @@ def _set_client_for_tests(client: Optional[SecurityClient]) -> None:
     _CLIENT = client
 
 
-def _fetch_sync(url: str, follow_redirects: bool = True) -> str:
-    async def _run() -> Dict[str, Any]:
+def _fetch_sync(url: str, follow_redirects: bool = True, compress_with_query: Optional[str] = None) -> str:
+    async def _fetch() -> Dict[str, Any]:
         return await _client().call(
             "network.fetch",
             {"url": url, "follow_redirects": follow_redirects},
         )
 
+    async def _compress(text: str, query: str) -> Dict[str, Any]:
+        return await _client().call(
+            "network.compress",
+            {"text": text, "query": query},
+        )
+
     try:
-        result = asyncio.run(_run())
+        result = asyncio.run(_fetch())
     except (ResponseError, TransportError) as e:
         return json.dumps({"error": "broker_error", "detail": str(e)})
 
@@ -81,25 +96,39 @@ def _fetch_sync(url: str, follow_redirects: bool = True) -> str:
         return json.dumps(result)
 
     body = result.get("body", b"")
+    body_text: Optional[str] = None
     if isinstance(body, bytes):
-        # Decode if it's text-shaped; otherwise return base64 so the LLM can
-        # still see something meaningful.
         try:
-            text = body.decode("utf-8")
-            body_payload: Any = text
+            body_text = body.decode("utf-8")
+            body_payload: Any = body_text
         except UnicodeDecodeError:
             import base64
             body_payload = "base64:" + base64.b64encode(body).decode("ascii")
     else:
+        body_text = body if isinstance(body, str) else None
         body_payload = body
-    return json.dumps({
+
+    out: Dict[str, Any] = {
         "status": result.get("status"),
         "final_url": result.get("final_url"),
         "body": body_payload,
         "truncated": result.get("truncated", False),
         "cache_hit": result.get("cache_hit", False),
         "content_type": result.get("headers", {}).get("content-type", ""),
-    })
+    }
+
+    if compress_with_query and body_text:
+        try:
+            comp = asyncio.run(_compress(body_text, compress_with_query))
+        except (ResponseError, TransportError) as e:
+            out["compress_error"] = f"broker_error: {e}"
+        else:
+            if "error" in comp:
+                out["compress_error"] = f"{comp['error']}: {comp.get('detail', '')}"
+            else:
+                out["compressed_body"] = comp.get("compressed_text")
+                out["compressed_ratio"] = comp.get("ratio")
+    return json.dumps(out)
 
 
 def build_tool() -> StructuredTool:

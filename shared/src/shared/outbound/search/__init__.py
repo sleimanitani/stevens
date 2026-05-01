@@ -67,3 +67,6 @@ def select_backend_name() -> str:
 
 # Register built-in backends. Imported for the side effect.
 from . import brave  # noqa: E402, F401
+from . import exa  # noqa: E402, F401
+from . import firecrawl  # noqa: E402, F401
+from . import tavily  # noqa: E402, F401

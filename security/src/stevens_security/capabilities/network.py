@@ -184,3 +184,61 @@ async def network_search(agent, params, context):
 
 def _result_to_dict(r) -> Dict[str, Any]:
     return {"title": r.title, "url": r.url, "snippet": r.snippet}
+
+
+# --- network.compress ---
+
+
+@default_registry.capability(
+    "network.compress",
+    clear_params=["backend"],   # query + text are sensitive (intent + content)
+)
+async def network_compress(agent, params, context):
+    """Compress a body of text against a query using an LLM backend.
+
+    Caller passes ``text`` and ``query``; we resolve the backend, fetch its
+    API key from the sealed store, and return the compressed extract +
+    ratio. Compression is not cached (each call's query intent is distinct);
+    that's a future optimization if measured.
+    """
+    text = params.get("text")
+    query = params.get("query")
+    if not isinstance(text, str) or not text:
+        return {"error": "text_required"}
+    if not isinstance(query, str) or not query.strip():
+        return {"error": "query_required"}
+    max_output = int(params.get("max_output_chars") or 4000)
+    backend_name = params.get("backend")
+    if not isinstance(backend_name, str):
+        from shared.outbound.compress import select_backend_name as _sel
+
+        backend_name = _sel()
+
+    if context.sealed_store is None:
+        return {"error": "sealed_store_unavailable"}
+    api_key_name = f"compress.{backend_name}.api_key"
+    try:
+        api_key = context.sealed_store.get_by_name(api_key_name)
+    except Exception as e:  # noqa: BLE001
+        return {"error": "api_key_missing", "detail": f"{api_key_name}: {e}"}
+
+    from shared.outbound.compress import CompressError, get_backend
+
+    try:
+        factory = get_backend(backend_name)
+    except CompressError as e:
+        return {"error": "unknown_backend", "detail": str(e)}
+    backend = factory(api_key=api_key)
+    try:
+        result = await backend.compress(
+            text=text, query=query, max_output_chars=max_output,
+        )
+    except CompressError as e:
+        return {"error": "compress_failed", "detail": str(e)}
+    return {
+        "backend": result.backend,
+        "compressed_text": result.compressed_text,
+        "original_chars": result.original_chars,
+        "compressed_chars": result.compressed_chars,
+        "ratio": result.ratio,
+    }

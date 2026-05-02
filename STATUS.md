@@ -49,6 +49,7 @@
 | 2026-04-30 | `902f0d8` | `v0.3.2-postgres` shipped — production wiring for the v0.3 primitives: Postgres-backed `ApprovalStore`, `PlanStore`, `Inventory`; `__main__` selects Postgres when `$DATABASE_URL` is set; `stevens approval` / `stevens dep` CLI wired through Postgres; `_admin.refresh_approvals` / `_admin.mark_request_approved` capabilities; `scripts/db_migrate.sh` runner. Operator unblock for first real installer run. 446/446 tests pass (1 skipped) |
 | 2026-05-02 | `d77cfa4` | `plan:` Pantheon/Mortals architecture ratified — `docs/architecture/pantheon.md` adopted; STEVENS.md §1.1 rewritten + Principles 12–14 added; agent-isolation.md revised with Mortal lifecycle + capability-grant-width split; v0.10-bootstrap, v0.11-plugins, v0.12-pantheon-expansion plans drafted. No code change. |
 | 2026-05-02 | `f37231a` | `v0.10` step 1 — `psql`-free migrate script. New `stevens_security.bootstrap.migrate` Python module replaces the shell-out; `scripts/db_migrate.sh` is now a 4-line `exec uv run python -m` wrapper. Verified end-to-end against the freshly-installed native Postgres 16 + pgvector on this box (docker fully removed, `engineer` no longer in `docker` group). 609/609 tests pass (3 skipped). |
+| 2026-05-02 | _pending_ | `v0.10` step 2 — native Postgres detector + provisioner. New `stevens_security.bootstrap.postgres` module: `detect()` probes psql/pg_isready/dpkg/pgvector pkg + psycopg-probes the assistant role/DB/extension; `install_instructions()` returns the exact multi-line sudo block per platform (debian/macos/windows) or `None` when ready; `ensure_role_and_database()` idempotently creates the role+DB+`CREATE EXTENSION vector` via peer auth; `write_env_file()` writes `~/.config/stevens/env` at 0600. CLI: `python -m stevens_security.bootstrap.postgres [--ensure] [--write-env]`. End-to-end verified on this box. 645 passed, 2 skipped (+35 unit + 1 integration test). |
 
 ## Up next
 
@@ -56,7 +57,9 @@
 
 **Step 1 shipped** (`f37231a`, 2026-05-02): `psql`-free migrate script via new `stevens_security.bootstrap` subpackage.
 
-**Next: step 2** — native Postgres installer module (`stevens_security.bootstrap.postgres`). Detects whether Postgres 16 + pgvector are installed; if missing, prints the *one* sudo line the user needs (PGDG repo + `apt install postgresql-16 postgresql-16-pgvector`); idempotently creates the `assistant` role + DB. After this step we have a reusable detector that step 4's `stevens bootstrap` CLI will call.
+**Step 2 shipped** (2026-05-02, this commit): native Postgres detector + provisioner module. The reusable substrate that step 4's `stevens bootstrap` CLI will glue to step 1's migrator and step 3's systemd-unit generator.
+
+**Next: step 3** — systemd user-unit generator (`stevens_security.bootstrap.systemd`). Generates one `*.service` file per Stevens service into `~/.config/systemd/user/`, each running `uv run python -m <module>` with `Restart=on-failure` and the right `EnvironmentFile=` (the env file step 2 just learned how to write). Calls `loginctl enable-linger` once. macOS launchd + Windows scheduled-task equivalents per the v0.10 plan.
 
 After v0.10:
 - **v0.11-plugins** — channels + Mortals as entry-point plugins (`stevens channels install <name>`, `stevens hire spawn <spec>`). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`.

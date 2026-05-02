@@ -1,6 +1,6 @@
 # Protocol — Security Agent RPC v1
 
-Stable contract between Stevens components (agents, adapters) and the
+Stable contract between Demiurge components (agents, adapters) and the
 Security Agent broker.
 
 This document is the **source of truth** for cross-language interop. If the
@@ -10,7 +10,7 @@ version the protocol.
 - **Version:** v1
 - **Status:** in development alongside `plans/v0.1-sec.md`. Stabilizes when
   step 8 ships (`shared.security_client`).
-- **Authoritative parser reference:** `security/src/stevens_security/` —
+- **Authoritative parser reference:** `security/src/demiurge/` —
   `framing.py`, `canonical.py`, `identity.py`.
 
 > **Related protocols.** This document covers the **wire shape** —
@@ -32,7 +32,7 @@ version the protocol.
 ## Transport
 
 - Unix domain socket.
-- Default server path: `/run/stevens/security.sock`.
+- Default server path: `/run/demiurge/security.sock`.
 - Server socket mode: `0o660`. Group assigned per-caller at deploy time
   (step 7 of the Build Plan).
 - No TCP. No network listener of any kind.
@@ -162,15 +162,15 @@ the private key to its local state volume. The public key is registered
 with the Security Agent via:
 
 ```
-stevens agent register <name>
+demiurge agent register <name>
 ```
 
 Sol confirms the registration once per agent. Private keys never leave
-the host and are never embedded in a container image. See STEVENS.md §3.5.
+the host and are never embedded in a container image. See DEMIURGE.md §3.5.
 
 ## Stability and versioning
 
-- The v1 wire shape is stable within v0.x of Stevens.
+- The v1 wire shape is stable within v0.x of Demiurge.
 - A v2 will bump the `v` field and MAY change any rule above. v1 and v2
   will coexist by having the server accept both `v` values during a
   transition.

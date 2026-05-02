@@ -4,7 +4,7 @@
 > **Owner:** Sol.
 > **Scope:** supersedes conflicting details in `docs/prd.docx` v0.1 where called out; otherwise the PRD remains the operational spec.
 
-Stevens is a personal assistant that runs locally on Sol's hardware (3090 GPU, Docker host). Named after the butler in *The Remains of the Day*. Role: chief of staff, butler, researcher. Will be trusted with credit cards, tax information, credentials, and other highly sensitive personal data — so security, context/memory management, and reuse of proven tools are first-class design concerns, not later hardening passes.
+Demiurge is a personal assistant that runs locally on Sol's hardware (3090 GPU, Docker host). Named after the butler in *The Remains of the Day*. Role: chief of staff, butler, researcher. Will be trusted with credit cards, tax information, credentials, and other highly sensitive personal data — so security, context/memory management, and reuse of proven tools are first-class design concerns, not later hardening passes.
 
 This document defines:
 
@@ -18,15 +18,15 @@ This document defines:
 
 ## 1. Identity
 
-- **System name:** Stevens.
-- **User-facing persona:** embodied by the UI agent. All user-visible dialogue signs as Stevens, regardless of which internal agent did the work.
+- **System name:** Demiurge.
+- **User-facing persona:** embodied by the UI agent. All user-visible dialogue signs as Demiurge, regardless of which internal agent did the work.
 - **Design stance:** small agents, shared infrastructure, many git checkpoints, reuse over rewrite, explicit trust boundaries. Every new capability should *reduce* the marginal cost of the next capability.
 
 ### 1.1 Two tiers — Pantheon and Mortals
 
-Stevens runs on a two-tier agent architecture: a small **Pantheon** of permanent core services that other agents depend on, and a population of **Mortals** — task/project/domain agents that are spawned, do their work, and may be retired. Full architecture writeup in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md). The short version:
+Demiurge runs on a two-tier agent architecture: a small **Pantheon** of permanent core services that other agents depend on, and a population of **Mortals** — task/project/domain agents that are spawned, do their work, and may be retired. Full architecture writeup in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md). The short version:
 
-- **Pantheon members** face inward, hold sensitive state, and are depended on by everything else. They ship with Stevens core, get broad capability grants because they are vetted code, and have mythological names because they are persistent characters in the system.
+- **Pantheon members** face inward, hold sensitive state, and are depended on by everything else. They ship with Demiurge core, get broad capability grants because they are vetted code, and have mythological names because they are persistent characters in the system.
 - **Mortals** face outward, do specific jobs, and depend on the Pantheon for everything sensitive. They get scoped capability grants per-instance, are namespaced in storage, and can be retired cleanly. They are named after their function (Email PM, Trip Planner) — no mythological branding. The lack of a hero name is the signal.
 
 The lifecycle vocabulary is fixed (see `pantheon.md` §"How things change"): **Apotheosis** (Mortal capability promoted into the Pantheon), **Succession** (new implementation replaces an old Pantheon member in the same domain), **Fading** (a Pantheon member's domain is no longer broadly needed), **Exile** (Pantheon member pulled after a problem), **Binding** (retired but kept reachable for legacy state), **Ragnarök** (full removal). Use the term, not a paraphrase, in plans + docs + commit messages.
@@ -46,13 +46,13 @@ Mortals do *not* get mythological names. They get descriptive snake_case identif
 | `pdf` | **Sphinx** | shipped (v0.4) | decoder of documents — PDF strategy router. Greek myth: poser/answerer of riddles; matches "pick the right way to decode this document". Routes between native pdfplumber, OCR fallback, and IBM Docling. |
 | `janus` | **Janus** | shipped (v0.7) | operator-assisted browser-driven OAuth/config-screen helper. Roman myth: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system. Code id matches display name. |
 | `memory` | **Mnemosyne** | planned (v0.12) | long-term structured memory + context retrieval across conversations and channels. Greek myth: titaness of memory, mother of the Muses. |
-| `interface` | **Iris** | planned (v0.12) | the user-facing persona; all external dialogue signs as Stevens but is composed by Iris. Greek myth: messenger goddess, rainbow bridge between gods and mortals — the natural fit for a UI surface. |
+| `interface` | **Iris** | planned (v0.12) | the user-facing persona; all external dialogue signs as Demiurge but is composed by Iris. Greek myth: messenger goddess, rainbow bridge between gods and mortals — the natural fit for a UI surface. |
 
 When promoting a new member to the Pantheon (Apotheosis, or initial design): add a row here with the mythological justification (one line: which character, why the fit). Don't rename code identifiers retroactively.
 
 #### Mortals (no fixed list)
 
-Mortals are not enumerated in the charter — they come and go. They are listed as installed plugins via `stevens hire list`. Examples that exist or are obvious near-term:
+Mortals are not enumerated in the charter — they come and go. They are listed as installed plugins via `demiurge hire list`. Examples that exist or are obvious near-term:
 
 - `email_pm` — inbox triage Mortal (currently in core; may move to plugin form in v0.11).
 - `installer` — system-package installer Mortal; proposes plans for Enkidu to execute.
@@ -78,11 +78,11 @@ Added in this document:
 7. **Security is a dimension, not a feature.** A dedicated Security Agent is the sole broker for all secrets and all sensitive actions. No other component reads secret material at rest or holds long-lived credentials. (§3)
 8. **Reuse over regenerate.** Before any new tool, agent, or helper is written, we point to the closest existing thing and justify why it doesn't fit. Three similar implementations is a design smell.
 9. **Testable or declared untestable.** Every change ships with a test plan; if a change can't be meaningfully tested (external API, UI), we say so out loud and compensate with manual verification steps and observability.
-10. **Context and memory are load-bearing.** Stevens's long-term value compounds through what it remembers. Memory is structured, scoped, redacted, and auditable — not a pile of prompt strings. (§4, to be detailed.)
+10. **Context and memory are load-bearing.** Demiurge's long-term value compounds through what it remembers. Memory is structured, scoped, redacted, and auditable — not a pile of prompt strings. (§4, to be detailed.)
 11. **Agents are narrow.** Each agent sees only what it strictly needs to do its job: its own tool list (filtered via `skills.registry`), its own playbooks, its own subscription topics, its own scoped DB rows. No agent has a broad system view. Cross-agent communication is the bus (asynchronous) or Enkidu (synchronous, brokered) — never direct imports. The blast radius of any single compromised agent is bounded by its narrow surface. Operationalized in `docs/architecture/agent-isolation.md`.
-12. **Two tiers — Pantheon and Mortals.** Stevens is a small **Pantheon** of permanent core services (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) plus a population of **Mortals** — task/project/domain agents spawned on demand. Pantheon members face inward and are depended on; Mortals face outward and depend on the Pantheon. The boundary rule is hard: **nothing in the Pantheon depends on a Mortal.** When a Mortal-shaped capability turns out to be needed across many tasks, it is *promoted* (Apotheosis) into the Pantheon. Architecture writeup: `docs/architecture/pantheon.md`.
-13. **Plugins, not monoliths.** Channels and Mortals are independently installable plugins (pip-installable packages discovered via Python entry points). Stevens core ships only the Pantheon, the plugin loader, the plugin runtime, and a registry of available plugins. Adding a channel or hiring a Mortal is `stevens channels install <name>` / `stevens hire spawn <spec>` — never a code change in core.
-14. **No passwordless root-equivalent on the Stevens host.** No account that runs Stevens or any of its agents may be in the `docker` group, may have NOPASSWD sudo, or may otherwise reach root without a password challenge. This rules out the `usermod -aG docker $USER` install pattern entirely; native daemons (apt-installed Postgres, systemd user units) are the default. Where containerization is needed, rootless mode is the only acceptable form. (Locked 2026-05-02 after the docker-group escalation discussion.)
+12. **Two tiers — Pantheon and Mortals.** Demiurge is a small **Pantheon** of permanent core services (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) plus a population of **Mortals** — task/project/domain agents spawned on demand. Pantheon members face inward and are depended on; Mortals face outward and depend on the Pantheon. The boundary rule is hard: **nothing in the Pantheon depends on a Mortal.** When a Mortal-shaped capability turns out to be needed across many tasks, it is *promoted* (Apotheosis) into the Pantheon. Architecture writeup: `docs/architecture/pantheon.md`.
+13. **Plugins, not monoliths.** Channels and Mortals are independently installable plugins (pip-installable packages discovered via Python entry points). Demiurge core ships only the Pantheon, the plugin loader, the plugin runtime, and a registry of available plugins. Adding a channel or hiring a Mortal is `demiurge channels install <name>` / `demiurge hire spawn <spec>` — never a code change in core.
+14. **No passwordless root-equivalent on the Demiurge host.** No account that runs Demiurge or any of its agents may be in the `docker` group, may have NOPASSWD sudo, or may otherwise reach root without a password challenge. This rules out the `usermod -aG docker $USER` install pattern entirely; native daemons (apt-installed Postgres, systemd user units) are the default. Where containerization is needed, rootless mode is the only acceptable form. (Locked 2026-05-02 after the docker-group escalation discussion.)
 
 ---
 
@@ -90,7 +90,7 @@ Added in this document:
 
 ### 3.1 Threat model
 
-Stevens will hold:
+Demiurge will hold:
 
 - OAuth tokens for multiple Gmail accounts, Calendar, Drive, and other channels over time
 - WhatsApp Baileys session state (device-level credential)
@@ -150,7 +150,7 @@ Two request shapes are supported, in strict order of preference:
 
 ### 3.5 Identity, authentication, authorization
 
-- **Identity.** Every caller (each agent, each adapter) runs as a distinct OS user inside its container and presents a signed agent identity — an Ed25519 keypair **generated per-install on first boot** and persisted to the caller's local state volume. The private key never leaves the host and is never embedded in a container image. On first boot, the agent hands its public key to the Security Agent; Sol acknowledges the registration once via `stevens agent register <name>` (trust-on-first-use gated by an explicit acknowledgement). Agents do not self-claim names; the Security Agent verifies the signature on every subsequent request.
+- **Identity.** Every caller (each agent, each adapter) runs as a distinct OS user inside its container and presents a signed agent identity — an Ed25519 keypair **generated per-install on first boot** and persisted to the caller's local state volume. The private key never leaves the host and is never embedded in a container image. On first boot, the agent hands its public key to the Security Agent; Sol acknowledges the registration once via `demiurge agent register <name>` (trust-on-first-use gated by an explicit acknowledgement). Agents do not self-claim names; the Security Agent verifies the signature on every subsequent request.
 - **Authorization.** A policy file (version-controlled, human-reviewable) maps `(agent_identity, capability, account_scope)` → `allow | deny`. Default deny. Example:
   ```yaml
   - agent: email_pm
@@ -169,15 +169,15 @@ Two request shapes are supported, in strict order of preference:
 
 - Every request to the Security Agent produces one append-only audit record: `timestamp, caller_identity, capability, param_hashes, account_id, outcome, latency_ms, rejection_reason?`.
 - Parameter **hashes**, not raw values, for anything sensitive. Non-sensitive params (account_id, capability name) logged in clear.
-- Log is WORM-style: append-only file + daily rollover + optional off-box replication. Readable by Sol via a `stevens audit` CLI.
+- Log is WORM-style: append-only file + daily rollover + optional off-box replication. Readable by Sol via a `demiurge audit` CLI.
 - Any `deny` or `rate-limit` outcome raises an alert through the UI agent.
 
 ### 3.7 Secret lifecycle
 
-- **Provisioning.** Secrets enter Stevens through `stevens secrets add <name>` CLI → prompts on TTY → writes sealed into the store. Never through `.env`, never via copy-paste into a file path, never through a prompt.
+- **Provisioning.** Secrets enter Demiurge through `demiurge secrets add <name>` CLI → prompts on TTY → writes sealed into the store. Never through `.env`, never via copy-paste into a file path, never through a prompt.
 - **At rest.** libsodium secretbox per secret, keyed from a root key unlocked at Security Agent startup. Root key source for v0.1: local TPM-sealed blob, or passphrase entered at boot, or macOS/Linux keyring — **decide in §3.11 below**.
 - **Rotation.** Each secret has a `rotate_at` target (e.g. 90 days for API keys, OAuth refresh tokens auto-rotate on use). Overdue rotations surface as UI-agent notifications.
-- **Revocation.** `stevens secrets revoke <name>` invalidates immediately across the system — handles die, policy denies further issuance.
+- **Revocation.** `demiurge secrets revoke <name>` invalidates immediately across the system — handles die, policy denies further issuance.
 - **Deletion.** Tombstoned in the store; audit record retained.
 
 ### 3.8 LLM context and redaction
@@ -197,7 +197,7 @@ Two request shapes are supported, in strict order of preference:
 | Payment instruments | Security Agent sealed store | Only via `payments.*` capabilities |
 | Anthropic / other API keys | Security Agent sealed store | Only via `perform(...)` |
 | User PII at rest (emails, calendar) | application Postgres | In-cluster only; outbound egress requires Security-Agent-issued capability |
-| Audit log | Security Agent append-only volume | Read-only via `stevens audit` |
+| Audit log | Security Agent append-only volume | Read-only via `demiurge audit` |
 
 ### 3.10 What this means for the existing scaffolding (migration)
 
@@ -217,8 +217,8 @@ The current `docs/prd.docx` v0.1 plan has several patterns that violate the rule
 1. **Sequencing — security first.** Security Agent + sidecar + sealed store land before Email PM. Milestone label: v0.1-sec. Email PM gets built on top of the broker, not retrofitted. Rationale: retrofitting credential flows after agents already depend on them is painful and error-prone.
 2. **Root key source — passphrase at boot.** Root key unlocked from a passphrase entered at Security Agent startup. Simple, no TPM dependency, Sol on the console at boot time. Upgrade to TPM-sealed for v0.2 when unattended restarts matter.
 3. **Sidecar proxy scope — general shape, day one.** Outbound proxy built as a reusable pattern on day one; Gmail is the first consumer. Every future channel (Calendar, Drive, WhatsApp Cloud API, payment processors) plugs into the same shape.
-4. **Audit log destination — local only for v0.1.** Append-only file on the Security Agent's volume, daily rollover, readable via `stevens audit`. Off-box replication deferred until Stevens runs on more than one host.
-5. **Agent identity keypair — per-install, first boot.** Each agent generates its own Ed25519 keypair on first boot, persisted to its local state volume. Sol acknowledges the public key once via `stevens agent register <name>`. Private keys never in images, never in git.
+4. **Audit log destination — local only for v0.1.** Append-only file on the Security Agent's volume, daily rollover, readable via `demiurge audit`. Off-box replication deferred until Demiurge runs on more than one host.
+5. **Agent identity keypair — per-install, first boot.** Each agent generates its own Ed25519 keypair on first boot, persisted to its local state volume. Sol acknowledges the public key once via `demiurge agent register <name>`. Private keys never in images, never in git.
 
 ### 3.11.1 Skills vs. capabilities (boundary)
 
@@ -226,7 +226,7 @@ The skills layer (`skills/` — see `CLAUDE_skills_layer.md` and `plans/v0.2-ski
 
 | | Capabilities (Enkidu) | Skills (`skills/`) |
 |---|---|---|
-| Lives in | `security/src/stevens_security/capabilities/` | `skills/src/skills/` |
+| Lives in | `security/src/demiurge/capabilities/` | `skills/src/skills/` |
 | Form | RPC handlers (deterministic Python functions) | LangChain tools + Markdown playbooks |
 | Caller | broker-mediated (signed UDS request) | direct in-process import |
 | Can hold secrets? | yes (sealed store) | no — must call a capability for any secret-bearing operation |
@@ -241,7 +241,7 @@ Nothing in `security/` should migrate to `skills/`. If you find yourself wanting
 
 1. Security Agent skeleton: container, UDS server, identity verification, policy loader, audit writer.
 2. Sealed secret store (libsodium secretbox, passphrase-unlocked).
-3. `stevens secrets` CLI (add / list / rotate / revoke).
+3. `demiurge secrets` CLI (add / list / rotate / revoke).
 4. Outbound sidecar proxy with a single capability shape: Gmail.
 5. Migrate `channel_accounts.credentials` → sealed store + ref column.
 6. Migrate `gmail_oauth_client.json` → sealed store.
@@ -266,7 +266,7 @@ Detail in `docs/protocols/approvals.md` and `docs/protocols/privileged-execution
 ## 4. Other dimensions (outline — to be filled in next)
 
 ### 4.1 Channels
-As in PRD §3.4: pipes with an event stream in and an action API out. No intelligence. Ownership: adapter teams. *Stevens addition:* every action API call a channel exposes must route through the Security Agent for credentials.
+As in PRD §3.4: pipes with an event stream in and an action API out. No intelligence. Ownership: adapter teams. *Demiurge addition:* every action API call a channel exposes must route through the Security Agent for credentials.
 
 ### 4.2 Agents (Pantheon vs Mortals)
 
@@ -278,7 +278,7 @@ The PRD's "core vs subject" split is now formalized as **Pantheon vs Mortals** �
 - **Sphinx** (`pdf`) — PDF strategy router. Shipped (v0.4).
 - **Janus** (`janus`) — operator-assisted browser onboarder. Shipped (v0.7).
 - **Mnemosyne** (`memory`) — long-term structured memory + context retrieval across sessions and channels. Defines what is remembered, for how long, in what scope, under what redaction rules. Planned (v0.12).
-- **Iris** (`interface`) — the user-facing persona. All external-facing messages sign as Stevens. Responsible for approvals, clarifying questions, daily briefings. Planned (v0.12).
+- **Iris** (`interface`) — the user-facing persona. All external-facing messages sign as Demiurge. Responsible for approvals, clarifying questions, daily briefings. Planned (v0.12).
 
 **Mortals** (illustrative — never an authoritative list):
 - `email_pm` — inbox triage Mortal (currently in-tree, plugin-form in v0.11).
@@ -306,7 +306,7 @@ Three levels of living documentation. Future sessions pick up from these alone �
 
 | Tier | File(s) | Purpose | Update cadence |
 |---|---|---|---|
-| **Charter** | `STEVENS.md`, `docs/prd.docx` | Principles, architecture, locked decisions | Rarely; changes need discussion |
+| **Charter** | `DEMIURGE.md`, `docs/prd.docx` | Principles, architecture, locked decisions | Rarely; changes need discussion |
 | **Build Plan** | `plans/<milestone>.md` | Detailed steps + test plan per step + inline progress markers + protocol contracts for the milestone | Continuously during milestone; archived when milestone ships |
 | **Status** | `STATUS.md` | One-page snapshot: active milestone, last step shipped, next step up, blockers, open decisions | Every commit |
 | **Protocol** (supporting) | `docs/protocols/*.md` | Stable RPC / event / API contracts between components | On contract change, versioned |
@@ -358,7 +358,7 @@ Added:
 Security: all §3.11 items resolved 2026-04-22.
 
 Architecture:
-1. Is the Stevens UI agent cross-channel (CLI + Gmail + Telegram later) or channel-specific per surface?
+1. Is the Demiurge UI agent cross-channel (CLI + Gmail + Telegram later) or channel-specific per surface?
 2. Where does Context Management live — its own container, or a library the core agents import?
 
 Memory (deferred to `MEMORY.md`):

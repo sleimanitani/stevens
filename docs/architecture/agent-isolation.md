@@ -2,7 +2,7 @@
 
 > **Status:** Draft v2 — revised 2026-05-02 to reflect the Pantheon/Mortals tier model.
 > **Audience:** anyone designing a new agent or extending an existing one.
-> **Charter ref:** STEVENS.md §2 Principles 11 (Agents are narrow), 12 (Pantheon/Mortals), 13 (Plugins), §3.11.1 (Skills vs. capabilities). Tier model: `docs/architecture/pantheon.md`.
+> **Charter ref:** DEMIURGE.md §2 Principles 11 (Agents are narrow), 12 (Pantheon/Mortals), 13 (Plugins), §3.11.1 (Skills vs. capabilities). Tier model: `docs/architecture/pantheon.md`.
 
 This document is the **system-wide rule** for how agents are designed, not just a description of how Enkidu works. It applies to every agent — every member of the **Pantheon** (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) and every **Mortal** (Email PM, installer, subject agents, future hires). The isolation principle below is uniform across both tiers; what differs is the *width* of the capability grant and the *lifecycle* shape, covered in §§3.6 and 4 respectively.
 
@@ -43,7 +43,7 @@ An agent is **not** allowed:
 - **Sudo / privileged execution.** Only Enkidu performs privileged actions, and only via approved plans (see `privileged-execution.md`).
 - **Network egress directly.** All outbound network calls go through an Enkidu capability (Gmail, Calendar, WhatsApp Cloud today; `network.fetch` and `network.search` in v0.3.1). The agent process can't open arbitrary sockets.
 - **The full event bus.** Only its declared subscription patterns.
-- **A "broad system view."** Examples: "list every installed dep," "list every active agent," "show all audit lines." These are operator queries and route through `stevens` CLI talking directly to Enkidu — not through any single agent.
+- **A "broad system view."** Examples: "list every installed dep," "list every active agent," "show all audit lines." These are operator queries and route through `demiurge` CLI talking directly to Enkidu — not through any single agent.
 - **Persistent state outside its declared surface.** No writing to `/tmp` for cross-call state, no per-agent on-disk caches without explicit charter approval. Persistent state lives in Postgres tables the agent's caller column can query.
 
 ---
@@ -90,7 +90,7 @@ Capability presets (`security/policy/presets/`) bundle common allow-rule sets pe
 
 When a shared table has cross-agent rows (`skill_proposals`, `agent_installs`, future approval queue, etc.), the column conventionally named `caller` or `proposing_agent` is the partition key for the agent's view. Either:
 
-- **Enforced at the broker.** Calls like `installer.query_my_installs()` (a skill, runs in-agent) read directly from Postgres but only with `WHERE caller = $current_caller` — and the `$current_caller` is sourced from env (`STEVENS_CALLER_NAME`), which the agent's process can't fake meaningfully because Enkidu's audit ties caller name to keypair on every privileged call.
+- **Enforced at the broker.** Calls like `installer.query_my_installs()` (a skill, runs in-agent) read directly from Postgres but only with `WHERE caller = $current_caller` — and the `$current_caller` is sourced from env (`DEMIURGE_CALLER_NAME`), which the agent's process can't fake meaningfully because Enkidu's audit ties caller name to keypair on every privileged call.
 - **Enforced via Enkidu.** For inventory writes that *must* not be forged (e.g. "this dep was installed by me on this date"), the write goes through an Enkidu capability that records the verified caller. The agent can't write a row claiming a different `caller`.
 
 The default is the former for reads, the latter for writes that have integrity implications.
@@ -112,14 +112,14 @@ The plugin manifest (`mortal.yaml`, see v0.11 plan) declares the capability scop
 
 ## 4. Mortal lifecycle
 
-Pantheon members live as long as Stevens does. Mortals have an explicit lifecycle:
+Pantheon members live as long as Demiurge does. Mortals have an explicit lifecycle:
 
-1. **Spawn.** A Mortal is created either ad-hoc ("Stevens, plan my Tokyo trip") or by installing a plugin (`stevens hire install trip-planner`). At spawn, the manifest's declared capability scope is presented to Sol for approval (or matched against a standing approval). On approval: a per-Mortal Postgres schema is created (`mortal_<id>`), a keypair is generated, the policy file gets an `agent: <id>` block, and the Mortal's process is started.
+1. **Spawn.** A Mortal is created either ad-hoc ("Demiurge, plan my Tokyo trip") or by installing a plugin (`demiurge hire install trip-planner`). At spawn, the manifest's declared capability scope is presented to Sol for approval (or matched against a standing approval). On approval: a per-Mortal Postgres schema is created (`mortal_<id>`), a keypair is generated, the policy file gets an `agent: <id>` block, and the Mortal's process is started.
 2. **Active.** The Mortal handles events on its declared topics, calls capabilities through Enkidu, and writes only to its own schema. All the §§2–3 isolation rules apply.
 3. **Quiescent (optional).** Long-lived Mortals (e.g. the Email PM) may sleep between events; they remain registered but consume no resources.
-4. **Retire.** `stevens hire retire <id>` revokes all grants, stops the process, archives the Mortal's schema (or drops it, per Sol's choice), removes the policy block, and tombstones the keypair. The Mortal's audit history remains in Enkidu's append-only log; nothing else of the Mortal persists.
+4. **Retire.** `demiurge hire retire <id>` revokes all grants, stops the process, archives the Mortal's schema (or drops it, per Sol's choice), removes the policy block, and tombstones the keypair. The Mortal's audit history remains in Enkidu's append-only log; nothing else of the Mortal persists.
 
-The lifecycle is observable: `stevens hire show <id>` displays the Mortal's manifest, current grants, schema size, last-active timestamp, and retirement state. `stevens hire list` shows all Mortals with their state.
+The lifecycle is observable: `demiurge hire show <id>` displays the Mortal's manifest, current grants, schema size, last-active timestamp, and retirement state. `demiurge hire list` shows all Mortals with their state.
 
 A Mortal that turns out to be broadly useful (the Apotheosis case from `pantheon.md`) is *not* mutated in place. Instead: its useful capability is extracted into a new Pantheon member with a mythological name and a code review pass; the Mortal continues to exist as a thin wrapper that calls the new Pantheon member, or is retired in favor of other Mortals using the new Pantheon directly.
 
@@ -139,12 +139,12 @@ The bus is the asynchronous coupling. Enkidu is the synchronous trust boundary. 
 
 ## 6. The operator's perspective
 
-Sol has the only "global view." He gets it via the `stevens` CLI talking directly to Enkidu (and to Postgres for things Enkidu doesn't broker). Examples:
+Sol has the only "global view." He gets it via the `demiurge` CLI talking directly to Enkidu (and to Postgres for things Enkidu doesn't broker). Examples:
 
-- `stevens dep list` — full system inventory across all agents.
-- `stevens audit tail` — every audited call.
-- `stevens approval list` — every pending approval.
-- `stevens secrets list` — every sealed secret (id + name + metadata, never values).
+- `demiurge dep list` — full system inventory across all agents.
+- `demiurge audit tail` — every audited call.
+- `demiurge approval list` — every pending approval.
+- `demiurge secrets list` — every sealed secret (id + name + metadata, never values).
 
 These are **not** capabilities any agent can call. The CLI authenticates as the operator (typically via the sealed-store passphrase or OS keyring entry); agents never pretend to be the operator.
 
@@ -169,7 +169,7 @@ When you add `agents/src/agents/<new>/`:
 
 - [ ] Add a `registry.yaml` entry with the **narrowest possible** `subscribes:` patterns.
 - [ ] Decide the agent's policy preset (`security/policy/presets/<preset>.yaml`) — or write a new one if no existing preset fits.
-- [ ] Run `stevens agent provision <new> --preset <preset>` — this generates the keypair, registers the pubkey, applies the preset to `capabilities.yaml`, writes the env profile.
+- [ ] Run `demiurge agent provision <new> --preset <preset>` — this generates the keypair, registers the pubkey, applies the preset to `capabilities.yaml`, writes the env profile.
 - [ ] In the agent's `agent.py`, get tools via `get_tools_for_agent(name, excludes=…, safety_max=…)`. Never via direct import.
 - [ ] In the agent's `agent.py`, get playbooks via `get_playbooks_for(name, event)`. Never enumerate the playbooks dir.
 - [ ] If the agent needs a new capability that doesn't exist yet, design it as a NEW capability (with its own policy entry), not by widening an existing one.
@@ -247,7 +247,7 @@ This isn't only for SOUL.md / USER.md. Any user-supplied or third-party text tha
 
 ## 12. References
 
-- STEVENS.md §2 Principles 11 (narrow), 12 (Pantheon/Mortals), 13 (Plugins), 14 (no docker-group root); §3.11.1 (Skills vs. capabilities).
+- DEMIURGE.md §2 Principles 11 (narrow), 12 (Pantheon/Mortals), 13 (Plugins), 14 (no docker-group root); §3.11.1 (Skills vs. capabilities).
 - `docs/architecture/pantheon.md` — the tier model and lifecycle vocabulary (Apotheosis / Succession / Fading / Exile / Binding / Ragnarök).
 - `docs/protocols/approvals.md` — when an agent wants to do something approval-gated.
 - `docs/protocols/privileged-execution.md` — when an agent wants to do something privileged.

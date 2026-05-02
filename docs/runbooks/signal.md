@@ -5,11 +5,11 @@
 > `signal-cli` daemon under a systemd user unit) lands in a follow-up step
 > after the v0.10 acceptance gate. Until then, every `docker compose ...`
 > command below is run *from the `dev/` directory* — i.e. `cd dev/`
-> first, then the `docker compose` command. The rest of Stevens (Postgres,
+> first, then the `docker compose` command. The rest of Demiurge (Postgres,
 > Enkidu, the signal-adapter itself) does not need docker —
-> `stevens bootstrap` installs and runs them natively.
+> `demiurge bootstrap` installs and runs them natively.
 
-End state: each Signal phone you onboard publishes inbound message events to the bus (DMs and groups), and agents can send replies. Stevens never touches Signal's encryption directly — the `signal-cli-rest-api` daemon owns the linked Signal session.
+End state: each Signal phone you onboard publishes inbound message events to the bus (DMs and groups), and agents can send replies. Demiurge never touches Signal's encryption directly — the `signal-cli-rest-api` daemon owns the linked Signal session.
 
 ## Goal
 
@@ -21,8 +21,8 @@ End state: each Signal phone you onboard publishes inbound message events to the
 ## Prerequisites
 
 - A real Signal account (the Signal app installed on a real phone — Signal links additional devices to a phone account; it doesn't sign up new accounts via the daemon).
-- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed store initialized. The signal-adapter itself runs as the systemd user unit `stevens-signal-adapter`; start it with `systemctl --user start stevens-signal-adapter`.
-- Docker available **for the `signal-cli-rest-api` daemon only**, run from `dev/`. Native apt+systemd install for `signal-cli` itself is queued as a v0.10 follow-up — until then, this is the one place in Stevens that still touches docker.
+- Demiurge already installed: `uv run demiurge bootstrap` succeeded, sealed store initialized. The signal-adapter itself runs as the systemd user unit `demiurge-signal-adapter`; start it with `systemctl --user start demiurge-signal-adapter`.
+- Docker available **for the `signal-cli-rest-api` daemon only**, run from `dev/`. Native apt+systemd install for `signal-cli` itself is queued as a v0.10 follow-up — until then, this is the one place in Demiurge that still touches docker.
 - The `signal-cli-rest-api` service brought up via the dev compose path: `cd dev/ && docker compose up -d signal-cli-rest-api` (port 8084 on host, 8080 inside the docker network).
 
 ## Steps
@@ -48,15 +48,15 @@ uv run python -m signal_adapter.add_account \
 
 # 4. start the signal-adapter for this account. With the v0.10 native
 #    install, the adapter runs as a systemd user unit. Set the per-account
-#    env vars in ~/.config/stevens/env (or a drop-in override under
-#    ~/.config/systemd/user/stevens-signal-adapter.service.d/), then:
-cat >> ~/.config/stevens/env <<'ENV'
+#    env vars in ~/.config/demiurge/env (or a drop-in override under
+#    ~/.config/systemd/user/demiurge-signal-adapter.service.d/), then:
+cat >> ~/.config/demiurge/env <<'ENV'
 SIGNAL_ACCOUNT_ID=signal.personal
 SIGNAL_PHONE=+15555551234
 SIGNAL_DAEMON_URL=http://localhost:8084
 ENV
-systemctl --user restart stevens-signal-adapter
-journalctl --user -u stevens-signal-adapter -f   # watch it come up
+systemctl --user restart demiurge-signal-adapter
+journalctl --user -u demiurge-signal-adapter -f   # watch it come up
 ```
 
 (One adapter instance per phone is the simplest pattern. For multi-phone,
@@ -66,13 +66,13 @@ duplicate the unit file under a per-account name and adjust the env vars
 ## Verify
 
 ```bash
-uv run stevens secrets list
+uv run demiurge secrets list
 # expected: signal.personal.daemon_url + signal.personal.phone
 
 # Send a Signal message FROM another account TO your linked phone.
 # Within ~2s (the polling interval), the adapter publishes
 # signal.message.received.signal.personal to the bus.
-uv run stevens audit tail -f
+uv run demiurge audit tail -f
 ```
 
 ## Multi-account / multi-phone
@@ -82,7 +82,7 @@ Each phone needs its own linked-device session in `signal-cli-rest-api`. Re-run 
 ## Common issues
 
 - **"Daemon not reachable at http://localhost:8084."** Container not up, or compose port binding mismatch. `cd dev/ && docker compose ps signal-cli-rest-api` should show it running. The daemon listens on port 8080 internally; compose maps it to host 8084.
-- **"QR code not scanning."** PNG might be too small for your phone's camera. Open it on a larger display (laptop screen). Or open the daemon URL directly in a browser: `http://localhost:8084/v1/qrcodelink/Stevens?number=+15555551234` — it returns the same PNG.
-- **"Linked device but no messages arriving."** The adapter polls every 2s by default; first message can take that long. Check `journalctl --user -u stevens-signal-adapter` for errors. The daemon URL the adapter uses comes from `SIGNAL_DAEMON_URL` in `~/.config/stevens/env` — usually `http://localhost:8084` (the host-side port the dev compose file maps).
+- **"QR code not scanning."** PNG might be too small for your phone's camera. Open it on a larger display (laptop screen). Or open the daemon URL directly in a browser: `http://localhost:8084/v1/qrcodelink/Demiurge?number=+15555551234` — it returns the same PNG.
+- **"Linked device but no messages arriving."** The adapter polls every 2s by default; first message can take that long. Check `journalctl --user -u demiurge-signal-adapter` for errors. The daemon URL the adapter uses comes from `SIGNAL_DAEMON_URL` in `~/.config/demiurge/env` — usually `http://localhost:8084` (the host-side port the dev compose file maps).
 - **"Adapter restarted, lost the linked session."** The daemon's session lives in a Docker volume (`signal-cli-data`). It survives adapter restarts. If the daemon container is recreated without the volume, the link is lost — re-run step 2.
 - **"I want to send media."** v0.5 is text-only. Media support is a v0.5.x follow-up.

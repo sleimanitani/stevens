@@ -2,7 +2,7 @@
 
 > **Status:** Draft v1 — design ahead of implementation (delivered in v0.3-installer-and-approvals).
 > **Audience:** the installer agent's implementer; future agents that need privileged actions; Enkidu's mechanism implementers.
-> **Charter ref:** STEVENS.md §3 (Security architecture).
+> **Charter ref:** DEMIURGE.md §3 (Security architecture).
 
 This document specifies the **plan → approve → execute → record** protocol for privileged actions. The first user is the installer agent (system package installs); the protocol generalizes to future privileged actions (mounting volumes, spawning long-lived subprocesses, running migrations, etc.).
 
@@ -16,7 +16,7 @@ The pattern: **agents propose plans (data); Enkidu validates and executes them (
 |---|---|---|
 | **Agent** (e.g. installer) | reads of host state, plan-building logic, its own scoped DB rows | sudo, network egress, sealed store, other agents' rows |
 | **Enkidu** | sudo, the sealed store, plan grammar validators, audit log, approval gate | LLM reasoning, agent-specific domain knowledge, broad bus subscriptions |
-| **Operator** (Sol) | all of the above via `stevens` CLI | n/a |
+| **Operator** (Sol) | all of the above via `demiurge` CLI | n/a |
 
 The agent **never executes privileged commands itself**. It hands a plan to Enkidu and Enkidu does the work.
 
@@ -38,7 +38,7 @@ request:
     - dpkg_status
         package: tesseract-ocr      # narrow query, not "list all packages"
     - opt_dirs
-        path_pattern: /opt/stevens/*
+        path_pattern: /opt/demiurge/*
 
 response:
   os_release:
@@ -53,7 +53,7 @@ response:
       installed: false
       version: null
   opt_dirs:
-    /opt/stevens/venvs: { exists: false }
+    /opt/demiurge/venvs: { exists: false }
 ```
 
 Approval-gated: **no**. This is read-only, low-risk; agents can call it freely. It's still a capability (not a skill) because some of the reads (e.g. dpkg state) require Enkidu's host privilege to be cleanly observable.
@@ -196,12 +196,12 @@ health_check_evaluator:
 ```
 
 Out of scope for v0.3 (mechanism schema supports them, implementations land later):
-- `pip`: pip-with-isolation into a per-tool venv at `/opt/stevens/venvs/<tool>/`. Plans require sha256 hash pins.
-- `git`: clone+checkout to `/opt/stevens/repos/<name>/<commit>/`. Plans require pinned commit SHA + remote allow-list.
-- `opt_dir`: download a binary to `/opt/<name>/<version>/`, sha256-verified, symlinked into `/opt/stevens/bin/`.
+- `pip`: pip-with-isolation into a per-tool venv at `/opt/demiurge/venvs/<tool>/`. Plans require sha256 hash pins.
+- `git`: clone+checkout to `/opt/demiurge/repos/<name>/<commit>/`. Plans require pinned commit SHA + remote allow-list.
+- `opt_dir`: download a binary to `/opt/<name>/<version>/`, sha256-verified, symlinked into `/opt/demiurge/bin/`.
 - `container`: pull a container image by digest, register a service.
 
-When a new mechanism lands, its grammar/validator/executor/health-check are added under `security/src/stevens_security/mechanisms/<mech>.py`. The capability surface (`plan_install`, `execute_privileged`) doesn't change.
+When a new mechanism lands, its grammar/validator/executor/health-check are added under `security/src/demiurge/mechanisms/<mech>.py`. The capability surface (`plan_install`, `execute_privileged`) doesn't change.
 
 ---
 
@@ -212,7 +212,7 @@ When Enkidu runs `system.execute_privileged`:
 - Spawns a subprocess as `root` (Enkidu has CAP_SYS_ADMIN-equivalent inside its container; the container runs with the sudoers entries needed for the mechanism's executor).
 - Forwards only the plan's executor cmdline and env; no shell interpolation, no shell at all (`subprocess.Popen` with `shell=False`).
 - Captures stdout / stderr to memory (capped at 1 MiB; truncates with a marker).
-- Hashes both, stores hashes in the audit line + raw streams in a per-trace log under `/var/lib/stevens/exec_logs/<trace_id>.log` (mode 0o600, rotated weekly).
+- Hashes both, stores hashes in the audit line + raw streams in a per-trace log under `/var/lib/demiurge/exec_logs/<trace_id>.log` (mode 0o600, rotated weekly).
 - Times out at the mechanism's `timeout_seconds`; on timeout, kills and runs rollback.
 - Returns the exit code, hashes, and a structured execution record.
 
@@ -252,8 +252,8 @@ CREATE INDEX environment_packages_global_idx
 
 ### 5.1 Per-agent scoping vs operator view
 
-- **Agents read only their own rows.** A skill `query_my_installs(name?)` (in-agent) executes `SELECT … WHERE caller = $env.STEVENS_CALLER_NAME` directly. The agent literally can't construct a query that returns other callers' rows because its DB role only grants `SELECT … WHERE caller = current_caller`.
-- **Sol queries the global view via `stevens dep list`.** This goes directly to Postgres with the operator's full-read role; no agent mediates.
+- **Agents read only their own rows.** A skill `query_my_installs(name?)` (in-agent) executes `SELECT … WHERE caller = $env.DEMIURGE_CALLER_NAME` directly. The agent literally can't construct a query that returns other callers' rows because its DB role only grants `SELECT … WHERE caller = current_caller`.
+- **Sol queries the global view via `demiurge dep list`.** This goes directly to Postgres with the operator's full-read role; no agent mediates.
 
 `environment_packages_global_idx` exists to make the operator's queries fast. `environment_packages_active_idx` exists to make agent-scoped reads fast.
 
@@ -267,7 +267,7 @@ Recorded: name, version, mechanism, location, sha256, plan_id, install date, hea
 
 ## 6. Rollback
 
-Every approved plan has a paired rollback plan validated at install-plan time. `stevens dep remove <name>` triggers:
+Every approved plan has a paired rollback plan validated at install-plan time. `demiurge dep remove <name>` triggers:
 
 1. Find the matching active inventory row.
 2. Look up its install plan; pull the rollback section.
@@ -307,7 +307,7 @@ Plans expire to bound the staleness window. An agent that wants to retry an expi
 Concrete walkthrough showing every actor.
 
 ```
-1. Operator:     stevens dep ensure tesseract-ocr
+1. Operator:     demiurge dep ensure tesseract-ocr
                  → publishes event {topic: system.dep.requested.tesseract-ocr}
 
 2. Installer:    handle(event)
@@ -332,7 +332,7 @@ Concrete walkthrough showing every actor.
 4. Installer:    publishes event {topic: system.dep.installed.tesseract-ocr}
                  → done
 
-5. Operator:     stevens dep list
+5. Operator:     demiurge dep list
                  → reads environment_packages directly
                  ← shows tesseract-ocr installed by installer at <date>, health passed
 
@@ -357,4 +357,4 @@ Concrete walkthrough showing every actor.
 - `docs/protocols/approvals.md` — how `system.execute_privileged` is gated.
 - `docs/protocols/security-agent.md` — wire protocol for the capabilities above.
 - `plans/v0.3-installer-and-approvals.md` — the milestone that builds this.
-- STEVENS.md §3.13 — charter pointer.
+- DEMIURGE.md §3.13 — charter pointer.

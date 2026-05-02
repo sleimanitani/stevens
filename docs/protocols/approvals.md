@@ -2,7 +2,7 @@
 
 > **Status:** Draft v1 — design ahead of implementation (delivered in v0.3-installer-and-approvals).
 > **Audience:** Enkidu's policy evaluator implementer; future agents adding approval-gated capabilities; Sol as operator.
-> **Charter ref:** STEVENS.md §3 (Security architecture), §3.13 (Approval gates).
+> **Charter ref:** DEMIURGE.md §3 (Security architecture), §3.13 (Approval gates).
 
 The **Approvals primitive** is how Enkidu lets Sol gate capabilities that need explicit human authorization without making him say yes to every individual call. It's a system-level mechanism, not specific to the installer — every future approval-gated capability (payments, credential rotation, autonomous-send for the email/whatsapp agents, etc.) goes through this same primitive.
 
@@ -108,9 +108,9 @@ The primitive matchers are deliberately small. New ones added only when a real c
 When no standing approval covers a call:
 
 1. Enkidu enqueues a row in `approval_requests` (status=pending) and returns a `BLOCKED` response carrying the request id and a human-readable summary.
-2. The caller (agent) treats `BLOCKED` as a retryable wait — it MAY poll, OR more typically, the agent's caller (the operator's CLI, e.g. `stevens dep ensure tesseract-ocr`) blocks on the request id.
-3. Sol runs `stevens approval list`, sees the pending request with full call detail (capability, caller, params, summary, rationale provided by the agent).
-4. Sol approves (`stevens approval approve <id>`) or rejects (`stevens approval reject <id> --reason "…"`).
+2. The caller (agent) treats `BLOCKED` as a retryable wait — it MAY poll, OR more typically, the agent's caller (the operator's CLI, e.g. `demiurge dep ensure tesseract-ocr`) blocks on the request id.
+3. Sol runs `demiurge approval list`, sees the pending request with full call detail (capability, caller, params, summary, rationale provided by the agent).
+4. Sol approves (`demiurge approval approve <id>`) or rejects (`demiurge approval reject <id> --reason "…"`).
 5. On approve, Enkidu re-runs the original call from the queued envelope, executes it, audits, returns the result via the original waiting client (or via a result-publication topic the caller subscribed to).
 6. On reject, Enkidu records the rejection, audits, and returns a structured `DENIED` to the caller.
 
@@ -119,7 +119,7 @@ When no standing approval covers a call:
 The `approve` CLI offers, when the operator confirms:
 
 ```
-$ stevens approval approve 7f3...
+$ demiurge approval approve 7f3...
    call: system.execute_privileged caller=installer
    plan: apt install tesseract-ocr (source: deb.debian.org bookworm main, sha256: …)
    approve? [y/N] y
@@ -144,7 +144,7 @@ Promotion is an opt-in — `[N/...]` defaults to no.
 
 Two paths:
 
-- **Direct grant**: `stevens approval standing grant --capability X --caller Y [--mechanism …] [--source …] [--packages …] [--param k=v] [--duration N]`. Used when Sol knows ahead of time that a class of action is acceptable.
+- **Direct grant**: `demiurge approval standing grant --capability X --caller Y [--mechanism …] [--source …] [--packages …] [--param k=v] [--duration N]`. Used when Sol knows ahead of time that a class of action is acceptable.
 - **Promoted from a per-call**: see §3.
 
 Either path writes a row to `standing_approvals` and signals Enkidu to refresh its in-memory cache.
@@ -179,7 +179,7 @@ Special values:
 
 ### 4.4 Revoke
 
-`stevens approval standing revoke <id>` writes `revoked_at = now()` to the DB **and signals Enkidu to drop the entry from its in-memory index**. The signal is a SIGHUP to Enkidu's process (or, if running locally, a small "refresh" UDS message on a side channel — implementation detail).
+`demiurge approval standing revoke <id>` writes `revoked_at = now()` to the DB **and signals Enkidu to drop the entry from its in-memory index**. The signal is a SIGHUP to Enkidu's process (or, if running locally, a small "refresh" UDS message on a side channel — implementation detail).
 
 If Enkidu is not running, revoke just writes the DB; on next Enkidu boot, the revoked row isn't loaded.
 
@@ -234,20 +234,20 @@ CREATE INDEX approval_requests_pending_idx
 ## 6. CLI surface
 
 ```
-stevens approval list                                   # pending per-call requests
-stevens approval show <id>                              # full detail of one request
-stevens approval approve <id> [--standing-for <dur>] [--tighten ...]
-stevens approval reject <id> --reason "..."
+demiurge approval list                                   # pending per-call requests
+demiurge approval show <id>                              # full detail of one request
+demiurge approval approve <id> [--standing-for <dur>] [--tighten ...]
+demiurge approval reject <id> --reason "..."
 
-stevens approval standing list [--include-expired]      # active standing approvals
-stevens approval standing show <id>
-stevens approval standing grant
+demiurge approval standing list [--include-expired]      # active standing approvals
+demiurge approval standing show <id>
+demiurge approval standing grant
     --capability <c> --caller <c>
     [--mechanism <m>] [--source <re>] [--packages a,b]
     [--param k=v ...]
     [--duration <30d|session|forever>]
     [--rationale "..."]
-stevens approval standing revoke <id>
+demiurge approval standing revoke <id>
 ```
 
 All of these talk directly to Postgres + Enkidu's refresh signal — no separate approval-management capability. The CLI authenticates with the sealed-store passphrase (operator identity), the same way `secrets` and `agent provision` do.
@@ -315,4 +315,4 @@ The point: standing approvals scale to all of these without code changes. The ma
 - `docs/architecture/agent-isolation.md` — why we need approvals at all.
 - `docs/protocols/privileged-execution.md` — the most prominent first user of this primitive.
 - `docs/protocols/security-agent.md` — wire protocol for talking to Enkidu.
-- STEVENS.md §3.13 — charter pointer to this doc.
+- DEMIURGE.md §3.13 — charter pointer to this doc.

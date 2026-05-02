@@ -1,6 +1,6 @@
-# Working with Stevens (Claude: read this first every session)
+# Working with Demiurge (Claude: read this first every session)
 
-Stevens is Sol's personal assistant — local-first (3090 host), multi-agent, trusted with sensitive data. Project identity, principles, and security architecture live in `STEVENS.md`.
+Demiurge is Sol's personal assistant — local-first (3090 host), multi-agent, trusted with sensitive data. Project identity, principles, and security architecture live in `DEMIURGE.md`.
 
 ## Startup protocol (do this, in order, every session)
 
@@ -9,7 +9,7 @@ Before doing **anything** else:
 1. **Read `STATUS.md`** — one-page snapshot of where we are: active milestone, last step shipped, next step up, open decisions.
 2. **Read the active Build Plan** linked from `STATUS.md` (e.g. `plans/v0.1-sec.md`). This is the detailed implementation plan with inline progress markers.
 3. **Read the protocol doc** for whatever area you're touching (`docs/protocols/...`). These define the stable contracts between components.
-4. **Read `STEVENS.md`** *only* if the task raises charter-level questions (principles, security architecture, locked decisions).
+4. **Read `DEMIURGE.md`** *only* if the task raises charter-level questions (principles, security architecture, locked decisions).
 
 **Do not** `grep` / `glob` / read across the whole repo on startup. The plan + status docs are the authoritative "where are we right now." If they seem out of date or inconsistent with the code, that is a bug in the docs — say so and update them; do not paper over it by re-reading the repo.
 
@@ -33,7 +33,7 @@ Before writing any new tool, helper, agent, or abstraction: find the closest exi
 
 ## Security posture (hard rules)
 
-See `STEVENS.md` §3 for full detail. At a minimum:
+See `DEMIURGE.md` §3 for full detail. At a minimum:
 
 - The **Security Agent is the sole broker** for all secrets. Other components never read the sealed store, never hold raw credentials, never pass secrets to each other.
 - Any change that adds network egress, new persistence location, new secret handling, or widens a trust boundary → **stop and confirm with Sol** before merging.
@@ -42,9 +42,9 @@ See `STEVENS.md` §3 for full detail. At a minimum:
 
 ## Python environment
 
-**Always use a venv.** Never run or install against the system Python. For Stevens, the project-local venv is `./.venv/` managed by `uv` — every Python invocation goes through `uv run …` from the repo root. Tests, scripts, CLIs, all of them.
+**Always use a venv.** Never run or install against the system Python. For Demiurge, the project-local venv is `./.venv/` managed by `uv` — every Python invocation goes through `uv run …` from the repo root. Tests, scripts, CLIs, all of them.
 
-Other venvs on this machine (as of 2026-04-22) are not compatible with Stevens — Python 3.10 vs our 3.12 requirement:
+Other venvs on this machine (as of 2026-04-22) are not compatible with Demiurge — Python 3.10 vs our 3.12 requirement:
 - `~/torch-eng/` — Sol's ML/3090 workspace (torch 2.5.1+cu121). Leave alone.
 - `~/.venvs/jupyter/` — general Jupyter kernel. Leave alone.
 
@@ -54,7 +54,7 @@ If a task genuinely needs to share another venv (rare), ask Sol first.
 
 - Small and focused. `main` stays green.
 - Co-author trailer: `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
-- Sol's git `user.email` is `s@y76.io` but is not set in local config — pass via `-c user.email=s@y76.io` until Sol sets it.
+- Sol's git `user.email` is `s@y76.io`, set in this repo's local config (2026-05-02). No need to pass `-c user.email=...` anymore.
 - Do not push without Sol's authorization (granted once does not grant always).
 - No `--no-verify`, no `--force` to `main`.
 
@@ -62,7 +62,7 @@ If a task genuinely needs to share another venv (rare), ask Sol first.
 
 | Tier | File(s) | Changes | Lifespan |
 |---|---|---|---|
-| Charter | `STEVENS.md`, `docs/prd.docx` | Rarely; requires discussion | Permanent |
+| Charter | `DEMIURGE.md`, `docs/prd.docx` | Rarely; requires discussion | Permanent |
 | Build Plan | `plans/<milestone>.md` | Edited continuously during milestone | Archived when milestone ships |
 | Status | `STATUS.md` | Updated every commit | Always current |
 | Protocol | `docs/protocols/*.md` | When a contract changes | Permanent, versioned |

@@ -18,7 +18,7 @@ This is for **business numbers** registered through Meta's WhatsApp Cloud API. F
 - A Meta app linked to the WABA.
 - A **System User** with permanent access token (NOT the temporary 24-hour token from the dashboard — that one expires daily).
 - A public webhook URL reachable from Meta (Tailscale Funnel / Cloudflare Tunnel — must be HTTPS).
-- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed store initialized. The whatsapp-cloud-adapter service runs as the systemd user unit `stevens-whatsapp-cloud-adapter` (port 8082); start it with `systemctl --user start stevens-whatsapp-cloud-adapter`.
+- Demiurge already installed: `uv run demiurge bootstrap` succeeded, sealed store initialized. The whatsapp-cloud-adapter service runs as the systemd user unit `demiurge-whatsapp-cloud-adapter` (port 8082); start it with `systemctl --user start demiurge-whatsapp-cloud-adapter`.
 
 ## Manual prep in Meta Business Manager (one-time)
 
@@ -33,12 +33,12 @@ This is for **business numbers** registered through Meta's WhatsApp Cloud API. F
 
 ```bash
 # 1. store the shared app secret (one time per Meta app)
-echo -n "$YOUR_APP_SECRET" | uv run stevens secrets add whatsapp_cloud.app_secret --from-stdin
+echo -n "$YOUR_APP_SECRET" | uv run demiurge secrets add whatsapp_cloud.app_secret --from-stdin
 
 # 2. onboard each phone (the access token comes via stdin so it doesn't
 #    appear in shell history or `ps`)
 echo -n "$YOUR_PERMANENT_ACCESS_TOKEN" | \
-  uv run stevens onboard whatsapp_cloud --app-secret-stdin -- \
+  uv run demiurge onboard whatsapp_cloud --app-secret-stdin -- \
     --id wac.business1 --name "Work WhatsApp" \
     --phone-number-id 999888777 \
     --display-phone-number "+1-555-1234" \
@@ -47,7 +47,7 @@ echo -n "$YOUR_PERMANENT_ACCESS_TOKEN" | \
 
 # 3. configure the Meta webhook to point at your public URL
 #    Meta dashboard → app → WhatsApp → Configuration → Webhook
-#    Callback URL: https://stevens.example.ts.net/whatsapp/webhook
+#    Callback URL: https://demiurge.example.ts.net/whatsapp/webhook
 #    Verify token: <the same nonce you used above>
 #    Subscribe to: messages, message_status (others optional)
 ```
@@ -55,13 +55,13 @@ echo -n "$YOUR_PERMANENT_ACCESS_TOKEN" | \
 ## Verify
 
 ```bash
-uv run stevens secrets list
+uv run demiurge secrets list
 # expected: whatsapp_cloud.app_secret + wac.business1.access_token + wac.business1.phone_number_id
 
 # Send a test WhatsApp message TO your business number from another
 # phone. Within seconds the webhook receives it, the adapter publishes
 # whatsapp.message.received.wac.business1 to the bus.
-uv run stevens audit tail -f
+uv run demiurge audit tail -f
 ```
 
 ## Multi-account
@@ -73,4 +73,4 @@ One container per phone is the simplest — set the right env vars when starting
 - **"24-hour conversation window."** WhatsApp Cloud restricts unsolicited outbound: you can only send freeform text to a number that has messaged you within the last 24 hours. For older outbound, you must use a pre-approved **template** message. The adapter's `whatsapp.send_template` capability handles this.
 - **"Webhook signature mismatch."** Your `whatsapp_cloud.app_secret` doesn't match the app you actually got the access token from. They must come from the same Meta app.
 - **"Verify token mismatch on webhook setup."** The string you typed in Meta's dashboard doesn't match `--verify-token`. Re-check both.
-- **"Token revoked unexpectedly."** Your System User got disabled, or the token was a 24-hour temporary one (NOT a System User token). Generate a new System User token with `whatsapp_business_messaging` scope and rotate via `stevens secrets rotate`.
+- **"Token revoked unexpectedly."** Your System User got disabled, or the token was a 24-hour temporary one (NOT a System User token). Generate a new System User token with `whatsapp_business_messaging` scope and rotate via `demiurge secrets rotate`.

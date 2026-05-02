@@ -24,10 +24,10 @@ Events flow: channels publish to the bus (Postgres table in v0.1, NATS later), a
 - A Google Cloud project with Gmail API + Pub/Sub enabled (for Gmail channel)
 - Tailscale with Funnel enabled (for inbound webhooks)
 
-> **Not a prerequisite anymore:** Docker. Stevens v0.10+ installs natively
-> via `stevens bootstrap` (native Postgres + systemd user units). Docker is
+> **Not a prerequisite anymore:** Docker. Demiurge v0.10+ installs natively
+> via `demiurge bootstrap` (native Postgres + systemd user units). Docker is
 > deliberately *not* used — `docker` group membership is functionally
-> passwordless root (see STEVENS.md §2 Principle 14). The legacy
+> passwordless root (see DEMIURGE.md §2 Principle 14). The legacy
 > `docker compose` path lives under `dev/` for developers who want it.
 
 ## First-time setup
@@ -38,7 +38,7 @@ uv sync
 
 # 2. Run the bootstrap. It detects what's missing on this host and prints
 #    the one sudo block you need to run yourself. (bootstrap never escalates.)
-uv run stevens bootstrap
+uv run demiurge bootstrap
 
 # 3. Run the printed sudo block. On a fresh Debian/Ubuntu box it looks like:
 #       sudo apt-get install -y postgresql-16 postgresql-16-pgvector
@@ -46,17 +46,17 @@ uv run stevens bootstrap
 #    macOS uses `brew install postgresql@16 pgvector`.
 
 # 4. Re-run bootstrap to finish setup (creates assistant role+DB, applies
-#    migrations, writes ~/.config/stevens/env, generates systemd user units).
-uv run stevens bootstrap
+#    migrations, writes ~/.config/demiurge/env, generates systemd user units).
+uv run demiurge bootstrap
 
 # 5. One-time per machine: enable systemd user lingering so services start at boot.
 sudo loginctl enable-linger $USER
 
 # 6. Initialize the sealed store (you'll be prompted for a passphrase).
-uv run stevens secrets init
+uv run demiurge secrets init
 
 # 7. Bring up Enkidu (the Security Agent).
-systemctl --user start stevens-security
+systemctl --user start demiurge-security
 
 # 8. Pull the local model (on host).
 ollama pull qwen3:30b-a3b-instruct
@@ -64,7 +64,7 @@ ollama pull qwen3:30b-a3b-instruct
 
 After this, onboard channels — see `docs/runbooks/` for per-channel guides
 (`gmail.md`, `calendar.md`, `whatsapp-cloud.md`, `signal.md`). In v0.11
-those become `stevens channels install <name>`.
+those become `demiurge channels install <name>`.
 
 ## Onboarding accounts
 
@@ -103,25 +103,25 @@ npm run add-account -- --id wa.uae --name "UAE number"
 
 ## Running
 
-After `stevens bootstrap`, every Stevens service runs as a systemd user
+After `demiurge bootstrap`, every Demiurge service runs as a systemd user
 unit. Manage them like any other systemd service — no sudo needed:
 
 ```bash
 # Start individual services
-systemctl --user start stevens-security
-systemctl --user start stevens-gmail-adapter
-systemctl --user start stevens-agents
+systemctl --user start demiurge-security
+systemctl --user start demiurge-gmail-adapter
+systemctl --user start demiurge-agents
 
 # Status / logs
-systemctl --user status stevens-security
-journalctl --user -u stevens-agents -f
+systemctl --user status demiurge-security
+journalctl --user -u demiurge-agents -f
 
 # Stop / restart
-systemctl --user restart stevens-gmail-adapter
+systemctl --user restart demiurge-gmail-adapter
 ```
 
 The catalog of available units lives in
-`security/src/stevens_security/bootstrap/systemd.py` (`DEFAULT_SERVICES`).
+`security/src/demiurge/bootstrap/systemd.py` (`DEFAULT_SERVICES`).
 
 For development you can run the agents runtime directly instead of through
 the unit, for faster iteration:

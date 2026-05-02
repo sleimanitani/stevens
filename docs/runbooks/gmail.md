@@ -20,8 +20,8 @@ matches what the CLI actually does post-v0.6 and v0.7).
 
 - A Google account with permission to create a GCP project (any personal
   Google account or Workspace user).
-- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed
-  store initialized (`stevens secrets init`). See
+- Demiurge already installed: `uv run demiurge bootstrap` succeeded, sealed
+  store initialized (`demiurge secrets init`). See
   [`README.md`](README.md) §"Fresh-install master flow".
 - `gcloud` CLI available on your local machine.
 - Janus extra installed: `uv sync --extra janus` + `uv run playwright install chromium`.
@@ -38,12 +38,12 @@ gcloud auth application-default login    # the Pub/Sub calls need this
 # 2. run the GCP-side wizard. Creates project, enables APIs, creates
 #    Pub/Sub topic + IAM grants + push subscription. Pauses at the
 #    OAuth-client step (which Janus will drive in step 3).
-uv run stevens wizard google --project-id stevens-personal \
-    --push-endpoint https://stevens.example.ts.net/gmail/push
+uv run demiurge wizard google --project-id demiurge-personal \
+    --push-endpoint https://demiurge.example.ts.net/gmail/push
 
 # 3. (in a separate terminal, while the wizard is at the OAuth-client
 #    step) Janus drives consent screen + Desktop OAuth client creation.
-uv run stevens janus run google_oauth_client --project-id stevens-personal
+uv run demiurge janus run google_oauth_client --project-id demiurge-personal
 # Janus opens a browser. Sign in to Google when prompted. Janus walks
 # you through the consent-screen scopes + publish, then the credentials
 # page + Create Desktop client. At the end it pauses on a popup; YOU
@@ -52,7 +52,7 @@ uv run stevens janus run google_oauth_client --project-id stevens-personal
 # 4. back in the wizard's terminal — it's polling ~/Downloads/ for
 #    client_secret*.json. As soon as the file lands the wizard prints
 #    the next command:
-uv run stevens onboard gmail \
+uv run demiurge onboard gmail \
     --client-json ~/Downloads/client_secret_X.json \
     -- --id gmail.personal --name "Sol personal"
 # This ingests the OAuth client into the sealed store, opens a browser
@@ -61,7 +61,7 @@ uv run stevens onboard gmail \
 # users.watch() to register Pub/Sub, and inserts a channel_accounts row.
 
 # 5. (optional, per additional account) repeat step 4 with a new --id:
-uv run stevens onboard gmail \
+uv run demiurge onboard gmail \
     -- --id gmail.work --name "Sol work"
 # (no --client-json needed — it's already in the sealed store from the
 #  first run)
@@ -70,13 +70,13 @@ uv run stevens onboard gmail \
 ## Verify
 
 ```bash
-uv run stevens secrets list
+uv run demiurge secrets list
 # expected: gmail.oauth_client.id / .secret + gmail.<account_id>.refresh_token per account
 
-uv run stevens audit tail
+uv run demiurge audit tail
 # expected: an `ok` line for users.watch when the per-account flow ran
 
-uv run stevens doctor
+uv run demiurge doctor
 # expected: green
 ```
 
@@ -84,7 +84,7 @@ Send yourself a test email to one of the onboarded accounts. Within
 ~seconds the Pub/Sub push lands at your webhook URL, the gmail-adapter
 publishes an `email.received.<account_id>` event, and the Email PM
 agent (if running) picks it up. You'll see all of this in
-`stevens audit tail -f`.
+`demiurge audit tail -f`.
 
 ## Multi-account
 
@@ -109,7 +109,7 @@ for personal Gmail.
   `gcloud pubsub subscriptions update`.
 - **"Janus selector not found."** Google's UI changed. Update the
   selectors at the top of
-  `security/src/stevens_security/wizards/janus/recipes/google_oauth_client.py`
+  `security/src/demiurge/wizards/janus/recipes/google_oauth_client.py`
   and re-run.
 - **"Refresh token didn't appear in the OAuth response."** Google
   already had consent on file for that account. Revoke prior consent at

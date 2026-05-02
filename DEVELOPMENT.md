@@ -7,29 +7,29 @@
 > path lives in [`README.md`](README.md) and [`docs/runbooks/`](docs/runbooks/).
 > Pre-v0.10 history is in `git log -- DEVELOPMENT.md`.
 
-## How Stevens runs in dev
+## How Demiurge runs in dev
 
-After `uv run stevens bootstrap`:
+After `uv run demiurge bootstrap`:
 
 - Postgres is the **native** apt-installed `postgresql@16-main` system service.
-- Stevens services (Enkidu, channel adapters, agents runtime) run as
+- Demiurge services (Enkidu, channel adapters, agents runtime) run as
   systemd **user** units under your account. Manage with
-  `systemctl --user {start,stop,status,restart} stevens-<name>`.
-- Logs land in the journal: `journalctl --user -u stevens-<name> -f`.
-- Sealed-store + secrets live under `/var/lib/stevens/secrets/` (or
-  `STEVENS_SECURITY_SECRETS`).
+  `systemctl --user {start,stop,status,restart} demiurge-<name>`.
+- Logs land in the journal: `journalctl --user -u demiurge-<name> -f`.
+- Sealed-store + secrets live under `/var/lib/demiurge/secrets/` (or
+  `DEMIURGE_SECURITY_SECRETS`).
 - The repo lives wherever you cloned it; the systemd units `WorkingDirectory=`
   point at it, so do *not* move the checkout without re-running
-  `uv run python -m stevens_security.bootstrap.systemd --write` to refresh
+  `uv run python -m demiurge.bootstrap.systemd --write` to refresh
   the unit files.
 
 For fast iteration on one service, stop its unit and run the process
 directly under `uv run`:
 
 ```bash
-systemctl --user stop stevens-agents
+systemctl --user stop demiurge-agents
 uv run python -m agents.runtime           # foreground; ^C to stop
-systemctl --user start stevens-agents     # restore
+systemctl --user start demiurge-agents     # restore
 ```
 
 ## Testing
@@ -49,13 +49,13 @@ and not pollute state, but they do exercise real connections.
 For the full multi-service end-to-end smoke (publish a Gmail event, watch
 it land as a row, watch the agent pick it up), the cleanest path is
 to use the per-channel runbooks in `docs/runbooks/` against a clean
-sealed store + DB. `stevens reset` (default = dry-run; `--yes` to commit)
+sealed store + DB. `demiurge reset` (default = dry-run; `--yes` to commit)
 wipes everything for a fresh re-onboarding pass.
 
 ## Debugging
 
-- **Service won't start?** `systemctl --user status stevens-<name>` first;
-  then `journalctl --user -u stevens-<name> -n 200`.
+- **Service won't start?** `systemctl --user status demiurge-<name>` first;
+  then `journalctl --user -u demiurge-<name> -n 200`.
 - **Events not arriving?** Check the per-channel adapter's logs; the issue
   is usually upstream (webhook unreachable, Pub/Sub watch expired,
   daemon down). Each runbook has a "Common issues" section that hits the
@@ -66,10 +66,10 @@ wipes everything for a fresh re-onboarding pass.
 - **LLM slow or weird?** If you've enabled Langfuse (developer-only,
   optional), every LLM + tool call is a trace. Bring it up via
   `cd dev/ && docker compose up -d langfuse-db langfuse` —
-  it's deliberately not part of `stevens bootstrap`.
-- **Sealed store unlock failing?** `stevens doctor` reports it; if the
-  passphrase is in the OS keyring (`stevens passphrase remember`),
-  `keyring get stevens master-passphrase` reads it back.
+  it's deliberately not part of `demiurge bootstrap`.
+- **Sealed store unlock failing?** `demiurge doctor` reports it; if the
+  passphrase is in the OS keyring (`demiurge passphrase remember`),
+  `keyring get demiurge-security master-passphrase` reads it back.
 
 ## Adding things
 

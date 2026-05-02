@@ -30,7 +30,6 @@ opt-in) skips all mutating calls and just prints what would happen.
 
 from __future__ import annotations
 
-import grp
 import os
 import shutil
 import sys
@@ -38,7 +37,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from . import migrate, postgres, systemd
+from . import migrate, postgres, preflight as _preflight, systemd
 from .postgres import DEFAULT_DSN, env_file_path
 
 
@@ -56,36 +55,12 @@ class PreflightResult:
 
 
 def _in_docker_group(user: Optional[str] = None) -> bool:
-    """``True`` if the running OS user is a member of the ``docker`` group.
+    """Thin re-export — kept for back-compat with tests.
 
-    STEVENS.md §2 Principle 14: docker-group membership is functionally
-    passwordless root and is incompatible with running Stevens. This is the
-    one preflight check that hard-fails bootstrap.
-
-    Returns ``False`` if there is no ``docker`` group on this system, or
-    if we can't determine the user.
+    The detector lives in ``bootstrap.preflight`` so ``stevens doctor`` can
+    use it too (with warning policy instead of hard-fail).
     """
-    me = user or os.environ.get("USER") or os.environ.get("LOGNAME")
-    if not me:
-        return False
-    try:
-        members = grp.getgrnam("docker").gr_mem
-    except KeyError:
-        return False
-    if me in members:
-        return True
-    # Also check the user's primary group in case docker is somehow primary
-    try:
-        import pwd
-
-        pw = pwd.getpwnam(me)
-    except KeyError:
-        return False
-    try:
-        primary = grp.getgrgid(pw.pw_gid).gr_name
-    except KeyError:
-        return False
-    return primary == "docker"
+    return _preflight.in_docker_group(user)
 
 
 def preflight() -> PreflightResult:
@@ -113,7 +88,7 @@ def preflight() -> PreflightResult:
             "your OS user is in the `docker` group, which is functionally "
             "passwordless root (you can mount / into a container and chroot "
             "in). Stevens refuses to run on accounts with this privilege. "
-            "Remove yourself with: `sudo gpasswd -d $USER docker && newgrp $(id -gn)`"
+            f"Remove yourself with: `{_preflight.docker_group_removal_hint()}`"
         )
 
     if sys.platform != "linux":

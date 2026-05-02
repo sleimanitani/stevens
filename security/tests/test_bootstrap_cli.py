@@ -51,36 +51,9 @@ def test_preflight_warns_on_non_linux(monkeypatch):
     assert any("darwin" in w or "Linux" in w for w in r.warnings)
 
 
-def test_in_docker_group_true(monkeypatch):
-    monkeypatch.setenv("USER", "alice")
-    fake_grp = MagicMock(gr_mem=["alice", "bob"])
-    monkeypatch.setattr(cb.grp, "getgrnam", lambda name: fake_grp if name == "docker" else None)
-    assert cb._in_docker_group() is True
-
-
-def test_in_docker_group_false(monkeypatch):
-    monkeypatch.setenv("USER", "alice")
-    fake_grp = MagicMock(gr_mem=["bob", "carol"])
-    monkeypatch.setattr(cb.grp, "getgrnam", lambda name: fake_grp if name == "docker" else None)
-    fake_pw = MagicMock(pw_gid=1000)
-    monkeypatch.setattr("pwd.getpwnam", lambda name: fake_pw)
-    fake_primary = MagicMock(gr_name="alice")
-    monkeypatch.setattr(cb.grp, "getgrgid", lambda gid: fake_primary)
-    assert cb._in_docker_group() is False
-
-
-def test_in_docker_group_no_docker_group(monkeypatch):
-    monkeypatch.setenv("USER", "alice")
-    def raise_keyerror(name):
-        raise KeyError(name)
-    monkeypatch.setattr(cb.grp, "getgrnam", raise_keyerror)
-    assert cb._in_docker_group() is False
-
-
-def test_in_docker_group_no_user_env(monkeypatch):
-    monkeypatch.delenv("USER", raising=False)
-    monkeypatch.delenv("LOGNAME", raising=False)
-    assert cb._in_docker_group() is False
+# Note: docker-group detection logic itself is tested in
+# test_bootstrap_preflight.py (the shared module). Here we only assert
+# that cli_bootstrap delegates to it.
 
 
 # ----------------------------- run_bootstrap -----------------------------

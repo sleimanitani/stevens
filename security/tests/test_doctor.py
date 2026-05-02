@@ -98,6 +98,30 @@ def test_doctor_detects_orphan_policy_entry(workspace, monkeypatch) -> None:
     assert "ghost" in orphan_check.message
 
 
+def test_doctor_warns_on_docker_group_membership(workspace, monkeypatch) -> None:
+    """v0.10 step 5: doctor flags docker-group membership as a warning."""
+    from stevens_security.bootstrap import preflight as bp
+
+    monkeypatch.setattr(bp, "in_docker_group", lambda user=None: True)
+    report = _run(workspace)
+    docker_check = next(c for c in report.checks if c.name == "docker-group")
+    assert docker_check.ok is False
+    assert docker_check.info is True  # warning, not blocker
+    assert "passwordless root" in docker_check.message
+    assert "gpasswd" in (docker_check.remediation or "")
+    # And the report must still pass overall (info=True means non-blocker):
+    assert docker_check not in report.failed
+
+
+def test_doctor_passes_when_not_in_docker_group(workspace, monkeypatch) -> None:
+    from stevens_security.bootstrap import preflight as bp
+
+    monkeypatch.setattr(bp, "in_docker_group", lambda user=None: False)
+    report = _run(workspace)
+    docker_check = next(c for c in report.checks if c.name == "docker-group")
+    assert docker_check.ok is True
+
+
 def test_format_report_includes_remediation_lines(workspace) -> None:
     """The formatted output should surface the remediation for failed checks."""
     report = _run(workspace)

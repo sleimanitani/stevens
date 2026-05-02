@@ -120,8 +120,9 @@ def _check_socket_running(socket_path: str) -> Check:
             ok=False,
             message=f"no socket at {socket_path}",
             remediation=(
-                "start the security service: docker compose up -d security  "
-                "(or `uv run python -m stevens_security` for dev)"
+                "start the security service: "
+                "`systemctl --user start stevens-security`  "
+                "(installed via `stevens bootstrap`)"
             ),
             info=True,
         )
@@ -266,6 +267,36 @@ def _check_policy_refs_known_agents(
     )
 
 
+def _check_not_in_docker_group() -> Check:
+    """STEVENS.md §2 Principle 14: docker-group membership is functionally
+    passwordless root.
+
+    Bootstrap hard-fails on this; doctor reports it as a non-blocking
+    warning (the operator may have docker installed for unrelated reasons,
+    and may not be running Stevens-as-an-agent on this account yet — but
+    once they do, this needs to be cleaned up).
+    """
+    from .bootstrap.preflight import docker_group_removal_hint, in_docker_group
+
+    if in_docker_group():
+        return Check(
+            name="docker-group",
+            ok=False,
+            message=(
+                "your OS user is in the `docker` group — functionally "
+                "passwordless root (mount / into a container, chroot in). "
+                "Stevens refuses to run on such accounts."
+            ),
+            remediation=docker_group_removal_hint(),
+            info=True,  # warning, not blocker — bootstrap is the gate that hard-fails
+        )
+    return Check(
+        name="docker-group",
+        ok=True,
+        message="not in `docker` group",
+    )
+
+
 def run_doctor(
     *,
     secrets_root: Path,
@@ -276,6 +307,7 @@ def run_doctor(
 ) -> DoctorReport:
     """Run all checks and return a report. Pure: no I/O beyond stat/read."""
     report = DoctorReport()
+    report.checks.append(_check_not_in_docker_group())
     report.checks.append(_check_sealed_store_exists(secrets_root))
     report.checks.append(_check_sealed_store_unlocks(secrets_root))
     report.checks.append(_check_socket_running(socket_path))

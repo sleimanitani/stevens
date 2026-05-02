@@ -1,10 +1,10 @@
 # Architecture — Agent Isolation
 
-> **Status:** Draft v1 — design ahead of implementation (referenced by v0.3-installer-and-approvals).
+> **Status:** Draft v2 — revised 2026-05-02 to reflect the Pantheon/Mortals tier model.
 > **Audience:** anyone designing a new agent or extending an existing one.
-> **Charter ref:** STEVENS.md §2 Principle 11 (Agents are narrow), §3.11.1 (Skills vs. capabilities).
+> **Charter ref:** STEVENS.md §2 Principles 11 (Agents are narrow), 12 (Pantheon/Mortals), 13 (Plugins), §3.11.1 (Skills vs. capabilities). Tier model: `docs/architecture/pantheon.md`.
 
-This document is the **system-wide rule** for how agents are designed, not just a description of how Enkidu works. It applies to every agent: Email PM today, the installer in v0.3, subject agents (Berwyn deal etc.), the future interface agent, and anything else we add.
+This document is the **system-wide rule** for how agents are designed, not just a description of how Enkidu works. It applies to every agent — every member of the **Pantheon** (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) and every **Mortal** (Email PM, installer, subject agents, future hires). The isolation principle below is uniform across both tiers; what differs is the *width* of the capability grant and the *lifecycle* shape, covered in §§3.6 and 4 respectively.
 
 ---
 
@@ -99,9 +99,33 @@ The default is the former for reads, the latter for writes that have integrity i
 
 `agents/src/agents/runtime.py` honors the `subscribes:` list in `registry.yaml`. The runtime — not the agent — decides which events flow into the agent's `handle()` function. No subscription pattern containing a bare `*` or `>` is allowed.
 
+### 3.6 Capability grant width — Pantheon vs Mortal
+
+Both tiers go through the same policy file (`security/policy/capabilities.yaml`) and the same default-deny evaluator. What differs is *what kinds of grants are reasonable*.
+
+- **Pantheon members** ship with the core, are code-reviewed by Sol, and can hold relatively wide grants over their domain. Arachne can fetch any HTTP URL because that *is* its domain. Sphinx can read PDFs Sol gave it because that *is* its domain. Enkidu has the broadest grants because Enkidu *is* the broker. The trust comes from the code being permanent and reviewed.
+- **Mortals** get *narrow per-instance grants*. The Trip-Planner Mortal hired to plan one Tokyo trip gets `calendar.read:gmail.personal`, `whatsapp.send:wac.business1`, and nothing else — and only for the duration of that hire. A Mortal asking for `gmail.send:gmail.*` is suspicious and should be challenged: why does this one Mortal need that breadth? Either the grant is too wide or the Mortal is actually a Pantheon candidate.
+
+The plugin manifest (`mortal.yaml`, see v0.11 plan) declares the capability scope a Mortal needs *up front*. Sol approves the grant once at hire time; revoking the hire revokes the grants automatically. Capability widening after hire requires a fresh approval.
+
 ---
 
-## 4. Cross-agent communication
+## 4. Mortal lifecycle
+
+Pantheon members live as long as Stevens does. Mortals have an explicit lifecycle:
+
+1. **Spawn.** A Mortal is created either ad-hoc ("Stevens, plan my Tokyo trip") or by installing a plugin (`stevens hire install trip-planner`). At spawn, the manifest's declared capability scope is presented to Sol for approval (or matched against a standing approval). On approval: a per-Mortal Postgres schema is created (`mortal_<id>`), a keypair is generated, the policy file gets an `agent: <id>` block, and the Mortal's process is started.
+2. **Active.** The Mortal handles events on its declared topics, calls capabilities through Enkidu, and writes only to its own schema. All the §§2–3 isolation rules apply.
+3. **Quiescent (optional).** Long-lived Mortals (e.g. the Email PM) may sleep between events; they remain registered but consume no resources.
+4. **Retire.** `stevens hire retire <id>` revokes all grants, stops the process, archives the Mortal's schema (or drops it, per Sol's choice), removes the policy block, and tombstones the keypair. The Mortal's audit history remains in Enkidu's append-only log; nothing else of the Mortal persists.
+
+The lifecycle is observable: `stevens hire show <id>` displays the Mortal's manifest, current grants, schema size, last-active timestamp, and retirement state. `stevens hire list` shows all Mortals with their state.
+
+A Mortal that turns out to be broadly useful (the Apotheosis case from `pantheon.md`) is *not* mutated in place. Instead: its useful capability is extracted into a new Pantheon member with a mythological name and a code review pass; the Mortal continues to exist as a thin wrapper that calls the new Pantheon member, or is retired in favor of other Mortals using the new Pantheon directly.
+
+---
+
+## 5. Cross-agent communication
 
 When agent A needs something from agent B:
 
@@ -113,7 +137,7 @@ The bus is the asynchronous coupling. Enkidu is the synchronous trust boundary. 
 
 ---
 
-## 5. The operator's perspective
+## 6. The operator's perspective
 
 Sol has the only "global view." He gets it via the `stevens` CLI talking directly to Enkidu (and to Postgres for things Enkidu doesn't broker). Examples:
 
@@ -128,7 +152,7 @@ When the v0.2+ interface agent ships, it gets a curated subset of these queries 
 
 ---
 
-## 6. Anti-patterns to refuse
+## 7. Anti-patterns to refuse
 
 - **"Make this agent generic so it can do other things later."** No. Build a narrow agent now; if its sibling problem appears, build a sibling agent.
 - **"This tool is small enough that scoping is overkill."** Scoping is cheap (one line in `excludes`). Forgetting to scope is the failure mode.
@@ -139,7 +163,7 @@ When the v0.2+ interface agent ships, it gets a curated subset of these queries 
 
 ---
 
-## 7. How to add a new agent (checklist)
+## 8. How to add a new agent (checklist)
 
 When you add `agents/src/agents/<new>/`:
 
@@ -156,7 +180,7 @@ If the new agent's surface starts looking broad ("this would be useful for…"),
 
 ---
 
-## 8. Shared state — the future "secured shared cache" shape
+## 9. Shared state — the future "secured shared cache" shape
 
 A handful of state is naturally shared across consumers — the web fetch
 cache (Arachne's domain) is the canonical example. v0.3.1 ships an
@@ -183,7 +207,7 @@ directly." That would breach the agent-isolation principle. Instead:
 new capabilities, ACL-enforced, audit-logged, same as every other piece
 of shared state.
 
-## 9. Future references for borrowed patterns
+## 10. Future references for borrowed patterns
 
 When we need a class of capability we haven't built yet, the right move
 is "read a reference implementation of the same shape, write Python in
@@ -198,7 +222,7 @@ reference is queued up:
   in a header comment. **Not on the v0.3.x roadmap;** lands when a
   research/subject agent needs JS-rendered content.
 
-## 10. User-supplied prompt content (SOUL.md / USER.md / AGENTS.md)
+## 11. User-supplied prompt content (SOUL.md / USER.md / AGENTS.md)
 
 Future agents — most importantly the v0.2+ **interface agent** that talks to Sol directly — will inject several user-supplied or repo-supplied markdown files into their system prompt. The pattern (borrowed from OpenClaw + Hermes) is:
 
@@ -221,9 +245,10 @@ The scanner is regex + structural-pattern based (no LLM); detection is deliberat
 
 This isn't only for SOUL.md / USER.md. Any user-supplied or third-party text that flows into a prompt — fetched web content used directly in-prompt, email body content injected as context, etc. — should pass through `scan_for_injection` first. The interface agent ships first; subject agents and future research agents inherit the pattern.
 
-## 11. References
+## 12. References
 
-- STEVENS.md §2 (Principles), §3.11.1 (Skills vs. capabilities).
+- STEVENS.md §2 Principles 11 (narrow), 12 (Pantheon/Mortals), 13 (Plugins), 14 (no docker-group root); §3.11.1 (Skills vs. capabilities).
+- `docs/architecture/pantheon.md` — the tier model and lifecycle vocabulary (Apotheosis / Succession / Fading / Exile / Binding / Ragnarök).
 - `docs/protocols/approvals.md` — when an agent wants to do something approval-gated.
 - `docs/protocols/privileged-execution.md` — when an agent wants to do something privileged.
 - `docs/protocols/security-agent.md` — wire protocol for talking to Enkidu.

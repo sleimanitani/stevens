@@ -2,9 +2,10 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.6-google-wizard` — `stevens wizard google` shrinks GCP onboarding from ~8 manual steps to 3.
-**Active Build Plan:** [`plans/v0.6-google-wizard.md`](plans/v0.6-google-wizard.md)
-**Queued:** v0.7-janus (general OAuth onboarder agent with Playwright) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage.
+**Active milestone:** `v0.10-bootstrap` — drop docker as the documented install path, native Postgres + systemd user units, one-command `stevens bootstrap`. Driven by the 2026-05-02 realization that `docker` group membership is functionally passwordless root and is incompatible with running AI agents on the host (locked as STEVENS.md §2 Principle 14).
+**Active Build Plan:** [`plans/v0.10-bootstrap.md`](plans/v0.10-bootstrap.md)
+**Queued:** v0.11-plugins (channels + Mortals as entry-point plugins; STEVENS.md §2 Principle 13) · v0.12-pantheon-expansion (Mnemosyne + Iris) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage (these become individual plugins under the v0.11 model rather than in-tree code).
+**Architecture framing:** Pantheon vs Mortals — `docs/architecture/pantheon.md` (uploaded by Sol 2026-05-02). Ratified into STEVENS.md §1.1 + Principles 12–14. Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Mnemosyne (memory, v0.12), Iris (interface, v0.12).
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.
@@ -12,6 +13,12 @@
 - [`plans/v0.3-installer-and-approvals.md`](plans/v0.3-installer-and-approvals.md) — approvals primitive + installer, `c2f0929`.
 - [`plans/v0.3.1-web.md`](plans/v0.3.1-web.md) — Arachne + network.fetch/search, `8d1f64a`.
 - [`plans/v0.3.2-postgres.md`](plans/v0.3.2-postgres.md) — Postgres wiring, `902f0d8`.
+- v0.4-sphinx, v0.4.1-channels-framework, v0.4.x-injection-guard — see commit log.
+- v0.5-signal — Signal channel adapter shipped.
+- v0.6-google-wizard — `stevens wizard google` shipped.
+- v0.7-janus — Janus operator-assisted browser onboarder shipped.
+- v0.8-reset — `stevens reset` for fresh-install testing shipped.
+- v0.9-runbooks — per-channel runbooks + `stevens channels list` shipped.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped
@@ -40,31 +47,21 @@
 | 2026-04-30 | `c2f0929` | `v0.3-installer-and-approvals` shipped — approvals primitive (per-call queue + standing approvals with orthogonal predicates); `apt` mechanism + `system.*` capabilities (`read_environment`, `plan_install`, `execute_privileged`, `write_inventory`); installer agent; `stevens approval` + `stevens dep` CLI handlers; e2e BLOCKED → approve → replay → ok and standing-approval silent execute paths green; 389/389 tests pass (1 skipped) |
 | 2026-04-30 | `8d1f64a` | `v0.3.1-web` shipped — **Arachne** async-path web agent + `network.fetch` / `network.search` capabilities + modular search backend (Brave default) + in-memory TTL cache + per-domain rate limiter + `web_fetch`/`web_search` skills + PDF corpus regression script. Cache-sharing future shape and Browser Harness reference noted in `docs/architecture/agent-isolation.md`. 446/446 tests pass (1 skipped) |
 | 2026-04-30 | `902f0d8` | `v0.3.2-postgres` shipped — production wiring for the v0.3 primitives: Postgres-backed `ApprovalStore`, `PlanStore`, `Inventory`; `__main__` selects Postgres when `$DATABASE_URL` is set; `stevens approval` / `stevens dep` CLI wired through Postgres; `_admin.refresh_approvals` / `_admin.mark_request_approved` capabilities; `scripts/db_migrate.sh` runner. Operator unblock for first real installer run. 446/446 tests pass (1 skipped) |
+| 2026-05-02 | *(this commit)* | `plan:` Pantheon/Mortals architecture ratified — `docs/architecture/pantheon.md` adopted; STEVENS.md §1.1 rewritten + Principles 12–14 added; agent-isolation.md revised with Mortal lifecycle + capability-grant-width split; v0.10-bootstrap, v0.11-plugins, v0.12-pantheon-expansion plans drafted. No code change. |
 
 ## Up next
 
-**v0.1-sec is functionally complete**, and **v0.1.6-ergonomics** shipped a low-overhead operator surface so per-channel + per-agent onboarding is one command + one browser consent.
+**v0.10-bootstrap** is the active milestone — see `plans/v0.10-bootstrap.md`. Goal: drop docker from the documented install path, replace with native Postgres + systemd user units + a single `stevens bootstrap` command. Ten steps; acceptance gate is "fresh box → Stevens up in under 5 minutes with one sudo line and no docker."
 
-Remaining before first real email flows (each step is now a single command):
-1. Sol does the one-time Google Cloud Console setup (project, enable Gmail/Calendar/Pub/Sub APIs, OAuth consent screen → External + Production, create Desktop OAuth client, link billing). No CLI shortcut for this — Google has no API.
-2. `uv run stevens secrets init` — initialize sealed store.
-3. `uv run stevens passphrase remember` — opt-in: store passphrase in OS keyring so future calls are silent.
-4. `uv run stevens onboard gmail --client-json ~/Downloads/client_secret_X.json --id gmail.personal -- --name "Sol personal"` — ingests OAuth client (and shreds source) the first time, runs the per-account browser flow.
-5. `uv run stevens agent provision email_pm --preset email_pm` — keypair + register + apply `gmail.*`+`calendar.*` allow rules + write env profile.
-6. `docker compose up -d` then `uv run stevens agent run email_pm`.
-7. Send a test email; verify with `uv run stevens audit tail -f` — follow the acceptance checklist in `plans/v0.1-sec.md` step 22.
+After v0.10:
+- **v0.11-plugins** — channels + Mortals as entry-point plugins (`stevens channels install <name>`, `stevens hire spawn <spec>`). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`.
+- **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory and dialogue surfaces instead of inventing them per-Mortal.
 
-Run `uv run stevens doctor` at any point for a diagnostic with one-line remediations.
-
-Future (not blocking the first run):
-- WhatsApp Baileys adapter (TypeScript) — still stubbed; for personal numbers only. The Python WhatsApp Cloud API adapter (`channels/whatsapp-cloud/`) is now shipped for business numbers.
-- Agent runtime integration with Langfuse + redactor wiring.
-- Subject agents (Berwyn, etc. — v0.2 per PRD).
-
-Onboarding procedures (all documented per-channel):
-- Gmail: `docs/runbooks/gmail-oauth-setup.md`.
-- WhatsApp Cloud: Meta Business dashboard → access token → `stevens secrets add whatsapp_cloud.app_secret` + `uv run python -m whatsapp_cloud_adapter.add_account --access-token-stdin ...` per phone.
-- Calendar: same OAuth flow shape as Gmail (store `calendar.oauth_client.id/secret` in sealed store → `uv run python -m calendar_adapter.add_account --id calendar.personal ...`).
+Onboarding procedures (current; **will be replaced by `stevens channels install <name>` in v0.11**):
+- Gmail: `docs/runbooks/gmail.md`.
+- Calendar: `docs/runbooks/calendar.md`.
+- WhatsApp Cloud: `docs/runbooks/whatsapp-cloud.md`.
+- Signal: `docs/runbooks/signal.md`.
 
 ## Housekeeping (non-blocking)
 
@@ -78,7 +75,9 @@ None.
 
 ## Open decisions
 
-None active.
+None blocking.
 
 - Charter-level security decisions locked 2026-04-22 — see `STEVENS.md` §3.11.
+- Pantheon/Mortals tier model + no-passwordless-root-equivalent locked 2026-05-02 — see STEVENS.md §1.1, §2 Principles 12–14, `docs/architecture/pantheon.md`.
 - Open architectural/memory questions tracked in `STEVENS.md` §7 — not blocking current work.
+- Open questions per upcoming milestone live in their respective plan files (v0.10/v0.11/v0.12 each have an "Open questions" section).

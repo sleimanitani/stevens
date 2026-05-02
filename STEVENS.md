@@ -22,24 +22,43 @@ This document defines:
 - **User-facing persona:** embodied by the UI agent. All user-visible dialogue signs as Stevens, regardless of which internal agent did the work.
 - **Design stance:** small agents, shared infrastructure, many git checkpoints, reuse over rewrite, explicit trust boundaries. Every new capability should *reduce* the marginal cost of the next capability.
 
-### 1.1 Names
+### 1.1 Two tiers — Pantheon and Mortals
 
-Internal agents get human-readable names alongside their snake_case code identifiers. Names are display-only — they appear in logs, CLI banners, audit summaries, and docs. Code identifiers (`security_agent`, `email_pm`, container names, socket paths, capability allow rules) are **not** renamed; that would be churn for no functional benefit and would muddy the audit trail across the rename.
+Stevens runs on a two-tier agent architecture: a small **Pantheon** of permanent core services that other agents depend on, and a population of **Mortals** — task/project/domain agents that are spawned, do their work, and may be retired. Full architecture writeup in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md). The short version:
 
-Convention: pick a name from a coherent pantheon — currently mythological, with **Enkidu** (companion to Gilgamesh, sole keeper of the keys) for the Security Agent. Future agents: pick from the same source so names stay legible as a set.
+- **Pantheon members** face inward, hold sensitive state, and are depended on by everything else. They ship with Stevens core, get broad capability grants because they are vetted code, and have mythological names because they are persistent characters in the system.
+- **Mortals** face outward, do specific jobs, and depend on the Pantheon for everything sensitive. They get scoped capability grants per-instance, are namespaced in storage, and can be retired cleanly. They are named after their function (Email PM, Trip Planner) — no mythological branding. The lack of a hero name is the signal.
 
-| Code identifier | Display name | Role |
-|---|---|---|
-| `security_agent` | **Enkidu** | sole broker for secrets and sensitive operations (§3) |
-| `email_pm` | *(unnamed)* | inbox triage agent |
-| `installer` | *(unnamed)* | system-package installer; proposes plans for Enkidu to execute |
-| `web` | **Arachne** | weaver of fetches and searches — async-path web agent (v0.3.1). Greek mythology: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
-| `pdf` | **Sphinx** | decoder of documents — PDF strategy router (v0.4). Greek mythology: poser/answerer of riddles; matches the "pick the right way to decode this document" framing. Routes between native pdfplumber, OCR fallback, and IBM Docling depending on the PDF and the request. |
-| `janus` | **Janus** | operator-assisted browser-driven OAuth/config-screen helper (v0.7). Roman mythology: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system (Brave / Anthropic / Google OAuth-client / future Slack / Discord / Telegram). Code id matches the display name. |
-| `interface` (v0.2+) | *(unnamed)* | the agent that talks to Sol — uses the SOUL.md pattern |
-| subject agents (`berwyn_deal`, etc.) | *(unnamed)* | cross-channel agents per topic |
+The lifecycle vocabulary is fixed (see `pantheon.md` §"How things change"): **Apotheosis** (Mortal capability promoted into the Pantheon), **Succession** (new implementation replaces an old Pantheon member in the same domain), **Fading** (a Pantheon member's domain is no longer broadly needed), **Exile** (Pantheon member pulled after a problem), **Binding** (retired but kept reachable for legacy state), **Ragnarök** (full removal). Use the term, not a paraphrase, in plans + docs + commit messages.
 
-When naming new agents: add a row here and a one-line justification (which character / why it fits). Don't rename code identifiers.
+#### Naming
+
+Pantheon members get human-readable mythological names alongside their snake_case code identifiers. Names are display-only — they appear in logs, CLI banners, audit summaries, and docs. Code identifiers (`security_agent`, container names, socket paths, capability allow rules) are **not** renamed when display names change; that would be churn for no functional benefit and would muddy the audit trail across the rename.
+
+Mortals do *not* get mythological names. They get descriptive snake_case identifiers tied to their job (`email_pm`, `trip_planner`, `berwyn_deal`). Display names are equally descriptive ("Email PM", "Trip Planner — Tokyo Sept '26"). If you find yourself reaching for a hero name for a Mortal, that's a signal it might actually be a Pantheon candidate — escalate the design instead.
+
+#### Pantheon members (current + planned)
+
+| Code identifier | Display name | Status | Role |
+|---|---|---|---|
+| `security_agent` | **Enkidu** | shipped | sole broker for secrets and sensitive operations (§3) |
+| `web` | **Arachne** | shipped (v0.3.1) | weaver of fetches and searches — async-path web agent. Greek myth: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
+| `pdf` | **Sphinx** | shipped (v0.4) | decoder of documents — PDF strategy router. Greek myth: poser/answerer of riddles; matches "pick the right way to decode this document". Routes between native pdfplumber, OCR fallback, and IBM Docling. |
+| `janus` | **Janus** | shipped (v0.7) | operator-assisted browser-driven OAuth/config-screen helper. Roman myth: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system. Code id matches display name. |
+| `memory` | **Mnemosyne** | planned (v0.12) | long-term structured memory + context retrieval across conversations and channels. Greek myth: titaness of memory, mother of the Muses. |
+| `interface` | **Iris** | planned (v0.12) | the user-facing persona; all external dialogue signs as Stevens but is composed by Iris. Greek myth: messenger goddess, rainbow bridge between gods and mortals — the natural fit for a UI surface. |
+
+When promoting a new member to the Pantheon (Apotheosis, or initial design): add a row here with the mythological justification (one line: which character, why the fit). Don't rename code identifiers retroactively.
+
+#### Mortals (no fixed list)
+
+Mortals are not enumerated in the charter — they come and go. They are listed as installed plugins via `stevens hire list`. Examples that exist or are obvious near-term:
+
+- `email_pm` — inbox triage Mortal (currently in core; may move to plugin form in v0.11).
+- `installer` — system-package installer Mortal; proposes plans for Enkidu to execute.
+- subject agents (`berwyn_deal`, etc.) — cross-channel Mortals per topic.
+
+The migration of `email_pm` and `installer` from in-tree code to entry-point plugins is part of v0.11; today they're co-located with the core for convenience, but architecturally they have always been Mortals.
 
 ---
 
@@ -61,6 +80,9 @@ Added in this document:
 9. **Testable or declared untestable.** Every change ships with a test plan; if a change can't be meaningfully tested (external API, UI), we say so out loud and compensate with manual verification steps and observability.
 10. **Context and memory are load-bearing.** Stevens's long-term value compounds through what it remembers. Memory is structured, scoped, redacted, and auditable — not a pile of prompt strings. (§4, to be detailed.)
 11. **Agents are narrow.** Each agent sees only what it strictly needs to do its job: its own tool list (filtered via `skills.registry`), its own playbooks, its own subscription topics, its own scoped DB rows. No agent has a broad system view. Cross-agent communication is the bus (asynchronous) or Enkidu (synchronous, brokered) — never direct imports. The blast radius of any single compromised agent is bounded by its narrow surface. Operationalized in `docs/architecture/agent-isolation.md`.
+12. **Two tiers — Pantheon and Mortals.** Stevens is a small **Pantheon** of permanent core services (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) plus a population of **Mortals** — task/project/domain agents spawned on demand. Pantheon members face inward and are depended on; Mortals face outward and depend on the Pantheon. The boundary rule is hard: **nothing in the Pantheon depends on a Mortal.** When a Mortal-shaped capability turns out to be needed across many tasks, it is *promoted* (Apotheosis) into the Pantheon. Architecture writeup: `docs/architecture/pantheon.md`.
+13. **Plugins, not monoliths.** Channels and Mortals are independently installable plugins (pip-installable packages discovered via Python entry points). Stevens core ships only the Pantheon, the plugin loader, the plugin runtime, and a registry of available plugins. Adding a channel or hiring a Mortal is `stevens channels install <name>` / `stevens hire spawn <spec>` — never a code change in core.
+14. **No passwordless root-equivalent on the Stevens host.** No account that runs Stevens or any of its agents may be in the `docker` group, may have NOPASSWD sudo, or may otherwise reach root without a password challenge. This rules out the `usermod -aG docker $USER` install pattern entirely; native daemons (apt-installed Postgres, systemd user units) are the default. Where containerization is needed, rootless mode is the only acceptable form. (Locked 2026-05-02 after the docker-group escalation discussion.)
 
 ---
 
@@ -246,13 +268,24 @@ Detail in `docs/protocols/approvals.md` and `docs/protocols/privileged-execution
 ### 4.1 Channels
 As in PRD §3.4: pipes with an event stream in and an action API out. No intelligence. Ownership: adapter teams. *Stevens addition:* every action API call a channel exposes must route through the Security Agent for credentials.
 
-### 4.2 Agents
-As in PRD §3.4 — core vs subject. Core agents identified so far:
-- **Context Management Agent** — owns Stevens's structured memory across sessions and channels. Defines what is remembered, for how long, in what scope, under what redaction rules. TBD.
-- **Life Management Agent** — the chief-of-staff planner: followups, projects, calendar, priorities. Subsumes the PRD's "Email PM" eventually; Email PM is a channel-flavored specialization for v0.1. TBD.
-- **UI Agent (Stevens persona)** — the single user-facing voice. All external-facing messages sign as Stevens. Responsible for approvals, clarifying questions, daily briefings. TBD.
+### 4.2 Agents (Pantheon vs Mortals)
 
-Subject agents (Berwyn deal, a specific relationship, etc.) ride on top of these.
+The PRD's "core vs subject" split is now formalized as **Pantheon vs Mortals** — see §1.1 and `docs/architecture/pantheon.md`.
+
+**Pantheon members** (current + planned):
+- **Enkidu** (`security_agent`) — sole broker for secrets and sensitive operations. Shipped.
+- **Arachne** (`web`) — async-path web fetch + search. Shipped (v0.3.1).
+- **Sphinx** (`pdf`) — PDF strategy router. Shipped (v0.4).
+- **Janus** (`janus`) — operator-assisted browser onboarder. Shipped (v0.7).
+- **Mnemosyne** (`memory`) — long-term structured memory + context retrieval across sessions and channels. Defines what is remembered, for how long, in what scope, under what redaction rules. Planned (v0.12).
+- **Iris** (`interface`) — the user-facing persona. All external-facing messages sign as Stevens. Responsible for approvals, clarifying questions, daily briefings. Planned (v0.12).
+
+**Mortals** (illustrative — never an authoritative list):
+- `email_pm` — inbox triage Mortal (currently in-tree, plugin-form in v0.11).
+- `installer` — system-package installer Mortal (currently in-tree, plugin-form in v0.11).
+- subject agents (`berwyn_deal`, future trip planners, project trackers) — domain Mortals per topic.
+
+The PRD's "Life Management Agent" — the chief-of-staff planner spanning followups/projects/calendar/priorities — is a Mortal that depends on Mnemosyne for memory, on Iris for any operator dialogue, and on Arachne/Enkidu for any external-facing work. It does not get added to the Pantheon unless multiple Mortals end up needing it (Apotheosis criterion).
 
 ### 4.3 Tools
 Small, composable, reusable LangChain `BaseTool` subclasses in `shared/tools/`. Rule: **before writing a new tool, link to the existing one you considered and explain why it doesn't fit.**

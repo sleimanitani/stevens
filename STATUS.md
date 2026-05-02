@@ -50,6 +50,7 @@
 | 2026-05-02 | `d77cfa4` | `plan:` Pantheon/Mortals architecture ratified — `docs/architecture/pantheon.md` adopted; STEVENS.md §1.1 rewritten + Principles 12–14 added; agent-isolation.md revised with Mortal lifecycle + capability-grant-width split; v0.10-bootstrap, v0.11-plugins, v0.12-pantheon-expansion plans drafted. No code change. |
 | 2026-05-02 | `f37231a` | `v0.10` step 1 — `psql`-free migrate script. New `stevens_security.bootstrap.migrate` Python module replaces the shell-out; `scripts/db_migrate.sh` is now a 4-line `exec uv run python -m` wrapper. Verified end-to-end against the freshly-installed native Postgres 16 + pgvector on this box (docker fully removed, `engineer` no longer in `docker` group). 609/609 tests pass (3 skipped). |
 | 2026-05-02 | `5bc371a` | `v0.10` step 2 — native Postgres detector + provisioner. New `stevens_security.bootstrap.postgres` module: `detect()` probes psql/pg_isready/dpkg/pgvector pkg + psycopg-probes the assistant role/DB/extension; `install_instructions()` returns the exact multi-line sudo block per platform (debian/macos/windows) or `None` when ready; `ensure_role_and_database()` idempotently creates the role+DB+`CREATE EXTENSION vector` via peer auth; `write_env_file()` writes `~/.config/stevens/env` at 0600. CLI: `python -m stevens_security.bootstrap.postgres [--ensure] [--write-env]`. End-to-end verified on this box. 645 passed, 2 skipped (+35 unit + 1 integration test). |
+| 2026-05-02 | _pending_ | `v0.10` step 3 — systemd user-unit generator. New `stevens_security.bootstrap.systemd` module: `DEFAULT_SERVICES` catalog (security + gmail/calendar/whatsapp-cloud/signal adapters + agents runtime); `render_unit()` pure renderer; `write_units()` idempotent (created/updated/unchanged); `is_lingering()` + `enable_linger_command()` for the one-time `loginctl enable-linger` grant; `reload_user_daemon()` for `systemctl --user daemon-reload`. CLI: `python -m stevens_security.bootstrap.systemd [--write]` defaults to dry-run. macOS/Windows raise `NotImplementedError` for now — Linux-first per the v0.10 plan. End-to-end verified: dry-run + `--write --target-dir /tmp/...` both work. 671 passed, 2 skipped (+26 unit tests). |
 
 ## Up next
 
@@ -57,9 +58,11 @@
 
 **Step 1 shipped** (`f37231a`, 2026-05-02): `psql`-free migrate script via new `stevens_security.bootstrap` subpackage.
 
-**Step 2 shipped** (2026-05-02, this commit): native Postgres detector + provisioner module. The reusable substrate that step 4's `stevens bootstrap` CLI will glue to step 1's migrator and step 3's systemd-unit generator.
+**Step 2 shipped** (`5bc371a`, 2026-05-02): native Postgres detector + provisioner module.
 
-**Next: step 3** — systemd user-unit generator (`stevens_security.bootstrap.systemd`). Generates one `*.service` file per Stevens service into `~/.config/systemd/user/`, each running `uv run python -m <module>` with `Restart=on-failure` and the right `EnvironmentFile=` (the env file step 2 just learned how to write). Calls `loginctl enable-linger` once. macOS launchd + Windows scheduled-task equivalents per the v0.10 plan.
+**Step 3 shipped** (2026-05-02, this commit): systemd user-unit generator. Six unit files (security + 4 channel adapters + agents runtime) ready to install into `~/.config/systemd/user/`. macOS launchd and Windows scheduled-task paths deliberately deferred — Linux first per the v0.10 plan, follow-up step or milestone for the others.
+
+**Next: step 4** — `stevens bootstrap` CLI itself. Top-level subcommand that wires Steps 1+2+3 into a one-command flow: preflight checks (Python, uv, sealed-store dir, Postgres, systemd-user, *not* in docker group), Postgres install/provision (Step 2), migrations (Step 1), systemd units (Step 3), final state summary. `--dry-run` prints what would happen.
 
 After v0.10:
 - **v0.11-plugins** — channels + Mortals as entry-point plugins (`stevens channels install <name>`, `stevens hire spawn <spec>`). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`.

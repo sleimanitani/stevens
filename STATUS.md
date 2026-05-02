@@ -2,9 +2,9 @@
 
 *One-page snapshot. Updated every commit. Start here in a fresh session.*
 
-**Active milestone:** `v0.10-bootstrap` — drop docker as the documented install path, native Postgres + systemd user units, one-command `stevens bootstrap`. Driven by the 2026-05-02 realization that `docker` group membership is functionally passwordless root and is incompatible with running AI agents on the host (locked as STEVENS.md §2 Principle 14).
-**Active Build Plan:** [`plans/v0.10-bootstrap.md`](plans/v0.10-bootstrap.md)
-**Queued:** v0.11-plugins (channels + Mortals as entry-point plugins; STEVENS.md §2 Principle 13) · v0.12-pantheon-expansion (Mnemosyne + Iris) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage (these become individual plugins under the v0.11 model rather than in-tree code).
+**Active milestone:** `v0.11-plugins` — channels + Mortals as entry-point plugins (STEVENS.md §2 Principle 13). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`. `stevens channels install <name>` + `stevens hire spawn <spec>` become the operator-facing surface.
+**Active Build Plan:** [`plans/v0.11-plugins.md`](plans/v0.11-plugins.md)
+**Queued:** v0.12-pantheon-expansion (Mnemosyne + Iris) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage (these become individual plugins under the v0.11 model rather than in-tree code).
 **Architecture framing:** Pantheon vs Mortals — `docs/architecture/pantheon.md` (uploaded by Sol 2026-05-02). Ratified into STEVENS.md §1.1 + Principles 12–14. Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Mnemosyne (memory, v0.12), Iris (interface, v0.12).
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
@@ -19,6 +19,7 @@
 - v0.7-janus — Janus operator-assisted browser onboarder shipped.
 - v0.8-reset — `stevens reset` for fresh-install testing shipped.
 - v0.9-runbooks — per-channel runbooks + `stevens channels list` shipped.
+- v0.10-bootstrap — `stevens bootstrap` (native Postgres + systemd user units, no docker) shipped.
 **Charter:** [`STEVENS.md`](STEVENS.md) · PRD: [`docs/prd.docx`](docs/prd.docx)
 
 ## Last shipped
@@ -50,6 +51,7 @@
 | 2026-05-02 | `d77cfa4` | `plan:` Pantheon/Mortals architecture ratified — `docs/architecture/pantheon.md` adopted; STEVENS.md §1.1 rewritten + Principles 12–14 added; agent-isolation.md revised with Mortal lifecycle + capability-grant-width split; v0.10-bootstrap, v0.11-plugins, v0.12-pantheon-expansion plans drafted. No code change. |
 | 2026-05-02 | `f37231a` | `v0.10` step 1 — `psql`-free migrate script. New `stevens_security.bootstrap.migrate` Python module replaces the shell-out; `scripts/db_migrate.sh` is now a 4-line `exec uv run python -m` wrapper. Verified end-to-end against the freshly-installed native Postgres 16 + pgvector on this box (docker fully removed, `engineer` no longer in `docker` group). 609/609 tests pass (3 skipped). |
 | 2026-05-02 | `5bc371a` | `v0.10` step 2 — native Postgres detector + provisioner. New `stevens_security.bootstrap.postgres` module: `detect()` probes psql/pg_isready/dpkg/pgvector pkg + psycopg-probes the assistant role/DB/extension; `install_instructions()` returns the exact multi-line sudo block per platform (debian/macos/windows) or `None` when ready; `ensure_role_and_database()` idempotently creates the role+DB+`CREATE EXTENSION vector` via peer auth; `write_env_file()` writes `~/.config/stevens/env` at 0600. CLI: `python -m stevens_security.bootstrap.postgres [--ensure] [--write-env]`. End-to-end verified on this box. 645 passed, 2 skipped (+35 unit + 1 integration test). |
+| 2026-05-02 | _pending_ | `v0.10` step 8 — fresh-box acceptance test executed against an isolated fresh-state simulation on this box (`XDG_CONFIG_HOME=/tmp/...`, `STEVENS_SECURITY_SECRETS=/tmp/...`). Bootstrap → ready in sub-second wall clock; sealed-store init against the fresh root produced `master.info` + `vault.sealed`. Acceptance gate met: `git clone` → ready < 5 min, one sudo block, no docker. **v0.10-bootstrap milestone complete.** |
 | 2026-05-02 | `c9adb8b` | `v0.10` step 7 — runbook content overhaul. Per-channel runbook prerequisites swapped from "compose / migrations / docker" to "stevens bootstrap succeeded"; `signal.md` step-4 rewritten to use `~/.config/stevens/env` + systemd user units; `DEVELOPMENT.md` rewritten as a thin v0.10-aware dev guide (the old v0.0-skeleton walkthrough is gone). 693 passed, 2 skipped (docs only). |
 | 2026-05-02 | `40792de` | `v0.10` step 6 — `compose.yaml` → `dev/compose.yaml`; new `dev/README.md`; top-level `README.md` rewritten around `stevens bootstrap` + systemd user units; `docs/runbooks/README.md` master flow updated; `docs/runbooks/signal.md` got a v0.10 transitional banner. Acceptance grep verified — outside `dev/`, all remaining `docker compose` mentions are explicit transitional pointers. 693 passed, 2 skipped. |
 | 2026-05-02 | `fd07ff3` | `v0.10` step 5 — docker-group refusal in doctor. New `stevens_security.bootstrap.preflight` module (shared detector); `stevens doctor` gains a `docker-group` check (info=True warning, doesn't fail the report); bootstrap retains hard-fail. Bonus cleanup: `doctor`'s `enkidu-running` remediation now points at `systemctl --user start stevens-security` instead of `docker compose`. 693 passed, 2 skipped. |
@@ -58,27 +60,18 @@
 
 ## Up next
 
-**v0.10-bootstrap** is the active milestone — see `plans/v0.10-bootstrap.md`. Goal: drop docker from the documented install path, replace with native Postgres + systemd user units + a single `stevens bootstrap` command. Eight steps; acceptance gate is "fresh box → Stevens up in under 5 minutes with one sudo line and no docker."
+**v0.10-bootstrap is complete** (2026-05-02). All 8 steps shipped. The new install path is `uv run stevens bootstrap` → run the printed sudo block → re-run bootstrap → `stevens secrets init` → `systemctl --user start stevens-security`. Native Postgres 16 + systemd user units, no docker, no `usermod -aG docker`.
 
-**Step 1 shipped** (`f37231a`, 2026-05-02): `psql`-free migrate script via new `stevens_security.bootstrap` subpackage.
+**Active milestone moves to `v0.11-plugins`** — see `plans/v0.11-plugins.md`. Channels + Mortals migrate from in-tree directories into per-plugin packages under `plugins/`, discoverable via Python entry points. Operator surface: `stevens channels install <name>` and `stevens hire spawn <spec>`. The runbooks under `docs/runbooks/` will get re-pointed at `stevens channels install` once the plugin shape lands; until then they remain the canonical onboarding flow.
 
-**Step 2 shipped** (`5bc371a`, 2026-05-02): native Postgres detector + provisioner module.
-
-**Step 3 shipped** (`372d875`, 2026-05-02): systemd user-unit generator.
-
-**Step 4 shipped** (`c7f7fc9`, 2026-05-02): `stevens bootstrap` CLI orchestrator.
-
-**Step 5 shipped** (`fd07ff3`, 2026-05-02): docker-group refusal in `stevens doctor` + shared `bootstrap.preflight` module.
-
-**Step 6 shipped** (`40792de`, 2026-05-02): `compose.yaml` relocated to `dev/`.
-
-**Step 7 shipped** (2026-05-02, this commit): runbook content overhaul. Per-channel prerequisites all point at `stevens bootstrap`; `signal.md` step-4 rewritten to use systemd user units instead of `docker compose run`; `DEVELOPMENT.md` rewritten as a thin v0.10-aware guide.
-
-**Next: step 8** — fresh-box acceptance test. End-to-end manual on a clean account: `git clone` → `uv run stevens bootstrap` → run the printed sudo block → re-run bootstrap → `stevens secrets init` → onboard one channel. Acceptance gate: under 5 minutes, one sudo block, no docker. After step 8 ships, v0.10 is done and the active milestone moves to v0.11-plugins.
-
-After v0.10:
-- **v0.11-plugins** — channels + Mortals as entry-point plugins (`stevens channels install <name>`, `stevens hire spawn <spec>`). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`.
+**After v0.11:**
 - **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory and dialogue surfaces instead of inventing them per-Mortal.
+
+## v0.10 deferred follow-ups (non-blocking)
+
+- **Native `signal-cli` install recipe.** Step 7 left signal-cli-rest-api as the one place still touching docker (under `dev/`). An apt+systemd unit recipe to run `signal-cli` natively would close the gap. Tracked as a follow-up, not blocking v0.11.
+- **macOS launchd + Windows scheduled-task paths** for `bootstrap.systemd`. Step 3 stubbed both with `NotImplementedError`. Linux is the v0.10 acceptance target; the others land when there's a non-Linux operator to test against.
+- **Publish `stevens-core` to PyPI.** Discussed in the v0.10 plan's open questions; consensus was "land with v0.11 plugins so the entry-point machinery has a real surface to wire into."
 
 ## Host state — engineer@Leopard3090 (Sol's dev box)
 

@@ -52,11 +52,25 @@
 
 ## Up next
 
-**v0.10-bootstrap** is the active milestone — see `plans/v0.10-bootstrap.md`. Goal: drop docker from the documented install path, replace with native Postgres + systemd user units + a single `stevens bootstrap` command. Ten steps; acceptance gate is "fresh box → Stevens up in under 5 minutes with one sudo line and no docker."
+**v0.10-bootstrap** is the active milestone — see `plans/v0.10-bootstrap.md`. Goal: drop docker from the documented install path, replace with native Postgres + systemd user units + a single `stevens bootstrap` command. Eight steps; acceptance gate is "fresh box → Stevens up in under 5 minutes with one sudo line and no docker."
+
+**Step 1 shipped** (`f37231a`, 2026-05-02): `psql`-free migrate script via new `stevens_security.bootstrap` subpackage.
+
+**Next: step 2** — native Postgres installer module (`stevens_security.bootstrap.postgres`). Detects whether Postgres 16 + pgvector are installed; if missing, prints the *one* sudo line the user needs (PGDG repo + `apt install postgresql-16 postgresql-16-pgvector`); idempotently creates the `assistant` role + DB. After this step we have a reusable detector that step 4's `stevens bootstrap` CLI will call.
 
 After v0.10:
 - **v0.11-plugins** — channels + Mortals as entry-point plugins (`stevens channels install <name>`, `stevens hire spawn <spec>`). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`.
 - **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory and dialogue surfaces instead of inventing them per-Mortal.
+
+## Host state — engineer@Leopard3090 (Sol's dev box)
+
+For session resumption: this box is where Stevens runs in development. Current state as of 2026-05-02:
+
+- **Docker:** fully removed (`apt purge`d). `engineer` is no longer in the `docker` group. Compose plugin removed. This is by design — STEVENS.md §2 Principle 14 forbids docker-group membership for any account that runs Stevens (it's functionally passwordless root).
+- **Postgres:** native install via PGDG apt repo. Postgres 16 + `postgresql-16-pgvector` 0.8.2. systemd unit `postgresql@16-main` running. Peer auth as `engineer` (which is a SUPERUSER). Database `assistant` owned by `engineer`, `vector` extension created.
+- **`DATABASE_URL`:** `postgresql:///assistant` (empty host = unix socket = peer auth, no password). Persisted in `~/.bashrc`.
+- **Stevens migrations:** all 9 applied against the `assistant` DB. `stevens secrets init` not yet run (no sealed store, no agent keypairs registered, no channels onboarded). The box is at "fresh after migrations" state — perfect for testing the rest of v0.10's bootstrap flow.
+- **`compose.yaml`:** still in repo root. Will move to `dev/compose.yaml` in v0.10 step 6.
 
 Onboarding procedures (current; **will be replaced by `stevens channels install <name>` in v0.11**):
 - Gmail: `docs/runbooks/gmail.md`.

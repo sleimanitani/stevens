@@ -34,3 +34,4 @@ pgdata/
 # Docs (large binary — track explicitly if wanted)
 # docs/*.docx
 # docs/*.pdf
+.ipynb_checkpoints/

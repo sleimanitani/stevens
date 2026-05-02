@@ -377,6 +377,13 @@ def cmd_wizard_google(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bootstrap(args: argparse.Namespace) -> int:
+    """First-time setup — preflight + Postgres + migrations + systemd units."""
+    from .bootstrap.cli_bootstrap import run_bootstrap
+
+    return run_bootstrap(dry_run=args.dry_run, repo_root=args.repo_root)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Run diagnostic checks. Returns non-zero if any non-info check fails."""
     from . import doctor
@@ -669,6 +676,31 @@ def build_parser() -> argparse.ArgumentParser:
     _add_root_flag(sts)
     sts.add_argument("--agents-yaml", type=Path, default=None)
     sts.set_defaults(fn=cmd_status)
+
+    # bootstrap
+    boot = top.add_parser(
+        "bootstrap",
+        help="first-time setup — Postgres + migrations + systemd units",
+        description=(
+            "Idempotent first-time setup orchestrator. Wires up native Postgres, "
+            "applies migrations, writes ~/.config/stevens/env, generates systemd "
+            "user units. Never runs sudo itself — prints the one block of "
+            "elevated commands the operator needs and stops, then resumes on "
+            "re-run."
+        ),
+    )
+    boot.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="describe what would happen without making any changes",
+    )
+    boot.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="repo root for systemd unit ExecStart paths (default: inferred)",
+    )
+    boot.set_defaults(fn=cmd_bootstrap)
 
     # doctor
     doc = top.add_parser("doctor", help="run diagnostic checks on the install")

@@ -1,6 +1,6 @@
 """Detect, install-instruct, and provision native Postgres 16 + pgvector.
 
-Stevens v0.10 step 2. Designed to run as the **operator's own OS user**, not
+Demiurge v0.10 step 2. Designed to run as the **operator's own OS user**, not
 root and not under sudo. The flow:
 
 1. ``detect()`` probes the host for what's already in place (psql binary,
@@ -13,13 +13,13 @@ root and not under sudo. The flow:
    idempotently creates the ``assistant`` role + ``assistant`` database +
    ``CREATE EXTENSION vector``. It assumes the operator already ran the sudo
    block (so they have a SUPERUSER role matching their Linux username).
-4. ``write_env_file()`` writes ``~/.config/stevens/env`` with the
+4. ``write_env_file()`` writes ``~/.config/demiurge/env`` with the
    ``DATABASE_URL`` line, idempotently. Subsequent ``stevens`` invocations
    pick that up via systemd unit ``EnvironmentFile=`` (step 3) or by the
    user sourcing it from their shell.
 
-This module is the reusable substrate for ``stevens bootstrap`` (step 4) and
-``stevens doctor`` (step 5). It does no I/O on import.
+This module is the reusable substrate for ``demiurge bootstrap`` (step 4) and
+``demiurge doctor`` (step 5). It does no I/O on import.
 """
 
 from __future__ import annotations
@@ -273,7 +273,7 @@ def install_instructions(state: PostgresState) -> Optional[InstallPlan]:
 
     if state.platform == "linux-debian":
         lines = [
-            "# Stevens v0.10 — Postgres 16 + pgvector install (one sudo block).",
+            "# Demiurge v0.10 — Postgres 16 + pgvector install (one sudo block).",
             "# These are the only commands that need root. Bootstrap never runs sudo itself.",
             "",
         ]
@@ -298,15 +298,15 @@ def install_instructions(state: PostgresState) -> Optional[InstallPlan]:
         return InstallPlan(
             sudo_block="\n".join(lines),
             notes=[
-                "After running the block above, re-run `stevens bootstrap` "
+                "After running the block above, re-run `demiurge bootstrap` "
                 "(or invoke ensure_role_and_database directly) to create the "
-                "assistant role + DB and write ~/.config/stevens/env.",
+                "assistant role + DB and write ~/.config/demiurge/env.",
             ],
         )
 
     if state.platform == "macos":
         lines = [
-            "# Stevens v0.10 — Postgres 16 + pgvector install on macOS.",
+            "# Demiurge v0.10 — Postgres 16 + pgvector install on macOS.",
             "brew install postgresql@16 pgvector",
             "brew services start postgresql@16",
         ]
@@ -323,7 +323,7 @@ def install_instructions(state: PostgresState) -> Optional[InstallPlan]:
     if state.platform == "windows":
         return InstallPlan(
             sudo_block=(
-                "# Stevens v0.10 — Postgres 16 + pgvector install on Windows.\n"
+                "# Demiurge v0.10 — Postgres 16 + pgvector install on Windows.\n"
                 "# Download and run the EnterpriseDB Postgres 16 installer:\n"
                 "#   https://www.postgresql.org/download/windows/\n"
                 "# Then install pgvector from:\n"
@@ -406,15 +406,15 @@ def ensure_role_and_database(
 
 
 def env_file_path() -> Path:
-    """``~/.config/stevens/env`` — operator-owned, mode 0600."""
+    """``~/.config/demiurge/env`` — operator-owned, mode 0600."""
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
-    return Path(base) / "stevens" / "env"
+    return Path(base) / "demiurge" / "env"
 
 
 def write_env_file(
     *, dsn: str = DEFAULT_DSN, path: Optional[Path] = None
 ) -> tuple[Path, bool]:
-    """Idempotently write ``DATABASE_URL=<dsn>`` to ``~/.config/stevens/env``.
+    """Idempotently write ``DATABASE_URL=<dsn>`` to ``~/.config/demiurge/env``.
 
     Preserves any other lines already in the file. Returns
     ``(path, changed)`` where ``changed=False`` means the file already had
@@ -505,7 +505,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     - default: detect + print state + print install_instructions if needed.
     - ``--ensure``: provision role/DB/extension (assumes the host is already
       installed and the running user has SUPERUSER via peer auth).
-    - ``--write-env``: write ``~/.config/stevens/env``.
+    - ``--write-env``: write ``~/.config/demiurge/env``.
     """
     import argparse
 
@@ -521,7 +521,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     p.add_argument(
         "--write-env",
         action="store_true",
-        help="write ~/.config/stevens/env with DATABASE_URL",
+        help="write ~/.config/demiurge/env with DATABASE_URL",
     )
     p.add_argument("--role", default=DEFAULT_ROLE)
     p.add_argument("--database", default=DEFAULT_DB)

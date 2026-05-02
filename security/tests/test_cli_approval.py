@@ -1,4 +1,4 @@
-"""Tests for the `stevens approval` and `stevens dep` CLI handlers.
+"""Tests for the `demiurge approval` and `demiurge dep` CLI handlers.
 
 Argparse + handler functions are exercised against the in-memory store. No
 DB, no Postgres. The Postgres backend is wired up in production via the

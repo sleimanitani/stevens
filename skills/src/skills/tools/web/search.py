@@ -2,7 +2,7 @@
 
 Returns a normalized list of {title, url, snippet}. Backend defaults to
 Brave (configurable per-call via the ``backend`` field, or process-wide
-via the STEVENS_SEARCH_BACKEND env var read by Enkidu).
+via the DEMIURGE_SEARCH_BACKEND env var read by Enkidu).
 """
 
 from __future__ import annotations
@@ -34,9 +34,9 @@ def _client() -> SecurityClient:
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
-    socket_path = os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
-    caller = os.environ["STEVENS_CALLER_NAME"]
-    key_path = os.environ["STEVENS_PRIVATE_KEY_PATH"]
+    socket_path = os.environ.get("DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock")
+    caller = os.environ["DEMIURGE_CALLER_NAME"]
+    key_path = os.environ["DEMIURGE_PRIVATE_KEY_PATH"]
     _CLIENT = SecurityClient.from_key_file(
         socket_path=socket_path,
         caller_name=caller,

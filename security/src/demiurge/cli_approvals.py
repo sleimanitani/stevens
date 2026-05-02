@@ -1,4 +1,4 @@
-"""CLI subcommands for `stevens approval` and `stevens dep`.
+"""CLI subcommands for `demiurge approval` and `demiurge dep`.
 
 The handlers take an ``ApprovalStore`` (and for `dep`, a ``SystemRuntime``-
 shaped reader) so tests don't need a Postgres instance.

@@ -15,7 +15,7 @@ PASSPHRASE = "correct horse battery staple"
 
 @pytest.fixture
 def passphrase_env(monkeypatch):
-    monkeypatch.setenv("STEVENS_PASSPHRASE", PASSPHRASE)
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", PASSPHRASE)
     yield
 
 
@@ -138,10 +138,10 @@ def test_secrets_delete_hard(tmp_path, passphrase_env, capsys):
 
 def test_secrets_wrong_passphrase_exits_nonzero(tmp_path, monkeypatch, capsys):
     root = tmp_path / "vault"
-    monkeypatch.setenv("STEVENS_PASSPHRASE", PASSPHRASE)
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", PASSPHRASE)
     cli_main(["secrets", "init", "--root", str(root)])
 
-    monkeypatch.setenv("STEVENS_PASSPHRASE", "bad")
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", "bad")
     rc, _, err = run(capsys, ["secrets", "list", "--root", str(root)])
     assert rc != 0
     assert "wrong passphrase" in err.lower() or "error" in err.lower()

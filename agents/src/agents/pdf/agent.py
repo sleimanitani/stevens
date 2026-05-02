@@ -35,7 +35,7 @@ def _semaphore() -> asyncio.Semaphore:
     global _SEMAPHORE
     if _SEMAPHORE is not None:
         return _SEMAPHORE
-    workers = int(os.environ.get("STEVENS_PDF_WORKERS", _DEFAULT_WORKERS))
+    workers = int(os.environ.get("DEMIURGE_PDF_WORKERS", _DEFAULT_WORKERS))
     _SEMAPHORE = asyncio.Semaphore(workers)
     return _SEMAPHORE
 

@@ -38,7 +38,7 @@ _SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def _load_passphrase() -> bytes:
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
     return getpass.getpass("sealed-store passphrase: ").encode("utf-8")
@@ -48,7 +48,7 @@ def _open_store():
     from demiurge.sealed_store import SealedStore
 
     root = Path(
-        os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+        os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
     )
     return SealedStore.unlock(root, _load_passphrase())
 
@@ -121,13 +121,13 @@ def main(
     from shared.security_client import SecurityClient
 
     sec_socket = os.environ.get(
-        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+        "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
     )
-    sec_caller = os.environ.get("STEVENS_CALLER_NAME", "calendar_adapter")
-    sec_keypath = os.environ.get("STEVENS_PRIVATE_KEY_PATH")
+    sec_caller = os.environ.get("DEMIURGE_CALLER_NAME", "calendar_adapter")
+    sec_keypath = os.environ.get("DEMIURGE_PRIVATE_KEY_PATH")
     if not sec_keypath:
         raise click.ClickException(
-            "STEVENS_PRIVATE_KEY_PATH env required so the add_account CLI can "
+            "DEMIURGE_PRIVATE_KEY_PATH env required so the add_account CLI can "
             "call calendar.watch_events through the Security Agent."
         )
 

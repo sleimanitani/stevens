@@ -60,7 +60,7 @@ def get_backend(name: str) -> BackendFactory:
 
 
 def select_backend_name() -> str:
-    return os.environ.get("STEVENS_COMPRESS_BACKEND", "anthropic")
+    return os.environ.get("DEMIURGE_COMPRESS_BACKEND", "anthropic")
 
 
 from . import anthropic  # noqa: E402, F401 — side-effect: registers itself

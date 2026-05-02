@@ -145,9 +145,9 @@ def test_run_bootstrap_real_path(monkeypatch, capsys, tmp_path: Path):
     monkeypatch.setattr(
         cb.systemd,
         "write_units",
-        lambda repo_root: [(tmp_path / "u" / "stevens-security.service", "created")],
+        lambda repo_root: [(tmp_path / "u" / "demiurge-security.service", "created")],
     )
-    monkeypatch.setattr(cb.systemd, "format_actions", lambda actions: "  + stevens-security.service: created")
+    monkeypatch.setattr(cb.systemd, "format_actions", lambda actions: "  + demiurge-security.service: created")
     monkeypatch.setattr(cb.systemd, "reload_user_daemon", lambda: True)
     monkeypatch.setattr(cb.systemd, "is_lingering", lambda: True)
     monkeypatch.setattr(sys, "platform", "linux")
@@ -157,11 +157,11 @@ def test_run_bootstrap_real_path(monkeypatch, capsys, tmp_path: Path):
     assert rc == 0
     assert "created role 'assistant'" in out
     assert "applied 9 migration" in out
-    assert "stevens-security.service" in out
+    assert "demiurge-security.service" in out
     assert "daemon-reload" in out
     # When linger=True, no enable-linger hint:
     assert "enable-linger" not in out
-    assert "stevens secrets init" in out
+    assert "demiurge secrets init" in out
 
 
 def test_run_bootstrap_real_path_prints_linger_hint(monkeypatch, capsys, tmp_path: Path):
@@ -211,7 +211,7 @@ def test_run_bootstrap_skips_systemd_on_macos(monkeypatch, capsys, tmp_path: Pat
 
 
 def test_top_level_stevens_bootstrap_in_help(capsys):
-    """`stevens bootstrap` is registered as a top-level subcommand."""
+    """`demiurge bootstrap` is registered as a top-level subcommand."""
     from demiurge.cli import build_parser
 
     parser = build_parser()

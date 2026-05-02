@@ -96,7 +96,7 @@ def make_app() -> FastAPI:
 
 async def _amain() -> None:
     logging.basicConfig(
-        level=os.environ.get("STEVENS_LOG_LEVEL", "INFO"),
+        level=os.environ.get("DEMIURGE_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     daemon = os.environ["SIGNAL_DAEMON_URL"]

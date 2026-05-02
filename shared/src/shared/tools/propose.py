@@ -48,7 +48,7 @@ def _slugify(s: str) -> str:
 
 def _proposed_dir() -> Path:
     """Repo-root-relative ``skills/proposed/``. Override via env for tests."""
-    env = os.environ.get("STEVENS_SKILLS_PROPOSED")
+    env = os.environ.get("DEMIURGE_SKILLS_PROPOSED")
     if env:
         return Path(env)
     return Path(__file__).resolve().parents[3] / "skills" / "proposed"
@@ -88,7 +88,7 @@ def propose_skill(
     abs_path = _proposed_dir().parent / rel  # _proposed_dir is .../skills/proposed
     # Above resolves to .../skills/proposed/<kind>s/<slug>-<short>.<ext> which
     # is the same as Path(__file__).resolve().parents[3] / rel; reconstructing
-    # to keep behavior identical even when STEVENS_SKILLS_PROPOSED override
+    # to keep behavior identical even when DEMIURGE_SKILLS_PROPOSED override
     # points elsewhere.
     abs_path = _proposed_dir() / f"{kind}s" / f"{slug}-{short}{ext}"
     abs_path.parent.mkdir(parents=True, exist_ok=True)

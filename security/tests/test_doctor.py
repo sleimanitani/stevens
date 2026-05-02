@@ -39,14 +39,14 @@ def test_doctor_clean_install_reports_missing_store(workspace) -> None:
     report = _run(workspace)
     names = {c.name: c for c in report.checks}
     assert names["sealed-store-exists"].ok is False
-    assert "stevens secrets init" in (names["sealed-store-exists"].remediation or "")
+    assert "demiurge secrets init" in (names["sealed-store-exists"].remediation or "")
 
 
 def test_doctor_passes_with_initialized_store_and_provisioned_agent(
     workspace, monkeypatch
 ) -> None:
     initialize_store(workspace["secrets_root"], b"hunter2")
-    monkeypatch.setenv("STEVENS_PASSPHRASE", "hunter2")
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", "hunter2")
     provision_agent(
         name="email_pm",
         preset_name="email_pm",
@@ -64,7 +64,7 @@ def test_doctor_passes_with_initialized_store_and_provisioned_agent(
 
 def test_doctor_detects_loose_key_perms(workspace, monkeypatch) -> None:
     initialize_store(workspace["secrets_root"], b"x")
-    monkeypatch.setenv("STEVENS_PASSPHRASE", "x")
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", "x")
     provision_agent(
         name="email_pm",
         preset_name=None,
@@ -83,7 +83,7 @@ def test_doctor_detects_loose_key_perms(workspace, monkeypatch) -> None:
 
 def test_doctor_detects_orphan_policy_entry(workspace, monkeypatch) -> None:
     initialize_store(workspace["secrets_root"], b"x")
-    monkeypatch.setenv("STEVENS_PASSPHRASE", "x")
+    monkeypatch.setenv("DEMIURGE_PASSPHRASE", "x")
     # Write a capabilities.yaml referencing an agent that's not in agents.yaml.
     workspace["capabilities_yaml"].write_text(
         yaml.safe_dump(
@@ -128,4 +128,4 @@ def test_format_report_includes_remediation_lines(workspace) -> None:
     out = doctor.format_report(report)
     # No store + no passphrase → at least one remediation arrow shown.
     assert "→" in out
-    assert "stevens secrets init" in out
+    assert "demiurge secrets init" in out

@@ -1,4 +1,4 @@
-"""``stevens channels list`` — discover what channels you can onboard.
+"""``demiurge channels list`` — discover what channels you can onboard.
 
 Hardcoded registry of shipped + planned channels. Adding a new channel
 is one entry; nothing dynamic to wire up.
@@ -25,7 +25,7 @@ _CHANNELS: List[ChannelEntry] = [
         code_id="gmail",
         status="shipped",
         runbook="docs/runbooks/gmail.md",
-        onboard_hint="stevens wizard google → janus run google_oauth_client → onboard gmail",
+        onboard_hint="demiurge wizard google → janus run google_oauth_client → onboard gmail",
     ),
     ChannelEntry(
         name="Google Calendar",
@@ -39,7 +39,7 @@ _CHANNELS: List[ChannelEntry] = [
         code_id="whatsapp_cloud",
         status="shipped",
         runbook="docs/runbooks/whatsapp-cloud.md",
-        onboard_hint="generate a Meta System User token, then stevens onboard whatsapp_cloud --app-secret-stdin",
+        onboard_hint="generate a Meta System User token, then demiurge onboard whatsapp_cloud --app-secret-stdin",
     ),
     ChannelEntry(
         name="Signal",
@@ -91,7 +91,7 @@ def all_channels() -> List[ChannelEntry]:
 
 
 def render() -> str:
-    """Format the channel list for `stevens channels list` stdout."""
+    """Format the channel list for `demiurge channels list` stdout."""
     lines = ["Channels — what's shipped vs planned:\n"]
     by_status: dict = {}
     for c in _CHANNELS:

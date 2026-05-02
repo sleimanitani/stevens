@@ -56,7 +56,7 @@ def build_dispatcher(
       approval, the dispatcher returns INTERNAL — guard against silent
       mis-config.
     - ``bypass_approval_for_request_id``: replay hook. The CLI's
-      ``stevens approval approve`` calls back into the dispatcher with the
+      ``demiurge approval approve`` calls back into the dispatcher with the
       original envelope; this predicate identifies replays and skips the
       gate. The replayed envelope is signed by the original agent (not
       Enkidu); the gate-skip just bypasses the per-call queue check.

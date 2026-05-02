@@ -19,13 +19,13 @@ def test_resolve_migrations_dir_explicit_arg(tmp_path: Path):
 
 
 def test_resolve_migrations_dir_env(monkeypatch, tmp_path: Path):
-    monkeypatch.delenv("STEVENS_MIGRATIONS_DIR", raising=False)
-    monkeypatch.setenv("STEVENS_MIGRATIONS_DIR", str(tmp_path))
+    monkeypatch.delenv("DEMIURGE_MIGRATIONS_DIR", raising=False)
+    monkeypatch.setenv("DEMIURGE_MIGRATIONS_DIR", str(tmp_path))
     assert _resolve_migrations_dir(None) == tmp_path.resolve()
 
 
 def test_resolve_migrations_dir_default(monkeypatch):
-    monkeypatch.delenv("STEVENS_MIGRATIONS_DIR", raising=False)
+    monkeypatch.delenv("DEMIURGE_MIGRATIONS_DIR", raising=False)
     out = _resolve_migrations_dir(None)
     assert out.name == "migrations"
     assert out.parent.name == "resources"

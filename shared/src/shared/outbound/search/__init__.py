@@ -5,7 +5,7 @@ returning the normalized result shape Stevens uses regardless of provider.
 
 Default backend: Brave (``brave.py``). Add Tavily / SearXNG / DuckDuckGo
 as new modules implementing the same Protocol; the selector reads
-``STEVENS_SEARCH_BACKEND`` from the environment.
+``DEMIURGE_SEARCH_BACKEND`` from the environment.
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ def get_backend(name: str) -> BackendFactory:
 
 
 def select_backend_name() -> str:
-    return os.environ.get("STEVENS_SEARCH_BACKEND", "brave")
+    return os.environ.get("DEMIURGE_SEARCH_BACKEND", "brave")
 
 
 # Register built-in backends. Imported for the side effect.

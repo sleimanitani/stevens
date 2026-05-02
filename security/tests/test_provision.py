@@ -62,9 +62,9 @@ def test_provision_writes_env_with_correct_keys(workspace) -> None:
         socket_path="/tmp/test.sock",
     )
     env_text = result.env_path.read_text()
-    assert "STEVENS_CALLER_NAME=email_pm" in env_text
-    assert f"STEVENS_PRIVATE_KEY_PATH={result.key_path}" in env_text
-    assert "STEVENS_SECURITY_SOCKET=/tmp/test.sock" in env_text
+    assert "DEMIURGE_CALLER_NAME=email_pm" in env_text
+    assert f"DEMIURGE_PRIVATE_KEY_PATH={result.key_path}" in env_text
+    assert "DEMIURGE_SECURITY_SOCKET=/tmp/test.sock" in env_text
 
 
 def test_provision_key_file_is_0600(workspace) -> None:
@@ -175,4 +175,4 @@ def test_provision_pubkey_decodes_to_32_bytes(workspace) -> None:
 def test_default_agents_dir_uses_xdg(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
     d = default_agents_dir()
-    assert d == tmp_path / "xdg" / "stevens" / "agents"
+    assert d == tmp_path / "xdg" / "demiurge" / "agents"

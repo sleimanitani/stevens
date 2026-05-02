@@ -1,28 +1,28 @@
-"""Stevens admin CLI — sealed-store operations and agent registration.
+"""Demiurge admin CLI — sealed-store operations and agent registration.
 
 Invoked as ``uv run stevens`` (via the ``[project.scripts]`` entry point in
 ``security/pyproject.toml``) or ``python -m demiurge.cli``.
 
 Subcommands::
 
-    stevens secrets init     [--root PATH] [--force]
-    stevens secrets add      NAME [--from-file PATH | --from-stdin]
+    demiurge secrets init     [--root PATH] [--force]
+    demiurge secrets add      NAME [--from-file PATH | --from-stdin]
                              [--metadata K=V ...] [--rotate-by-days N]
-    stevens secrets list     [--root PATH] [--all]
-    stevens secrets rotate   ID [--from-file PATH | --from-stdin]
+    demiurge secrets list     [--root PATH] [--all]
+    demiurge secrets rotate   ID [--from-file PATH | --from-stdin]
                              [--rotate-by-days N]
-    stevens secrets revoke   ID
-    stevens secrets delete   ID
-    stevens agent register   NAME (--pubkey-b64 B64 | --pubkey-file PATH)
+    demiurge secrets revoke   ID
+    demiurge secrets delete   ID
+    demiurge agent register   NAME (--pubkey-b64 B64 | --pubkey-file PATH)
                              [--agents-yaml PATH]
 
-Passphrase source: if ``STEVENS_PASSPHRASE`` is set in the environment,
+Passphrase source: if ``DEMIURGE_PASSPHRASE`` is set in the environment,
 it's used (intended for tests and supervised automation). Otherwise the
 CLI prompts via ``getpass``. ``init`` confirms the passphrase.
 
 Default paths come from environment:
-- ``STEVENS_SECURITY_SECRETS`` (default ``/var/lib/stevens/secrets``)
-- ``STEVENS_SECURITY_AGENTS`` (default ``security/policy/agents.yaml``)
+- ``DEMIURGE_SECURITY_SECRETS`` (default ``/var/lib/demiurge/secrets``)
+- ``DEMIURGE_SECURITY_AGENTS`` (default ``security/policy/agents.yaml``)
 """
 
 from __future__ import annotations
@@ -60,13 +60,13 @@ from .sealed_store import (
 
 def _default_root() -> Path:
     return Path(
-        os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+        os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
     )
 
 
 def _default_agents_yaml() -> Path:
     return Path(
-        os.environ.get("STEVENS_SECURITY_AGENTS", "security/policy/agents.yaml")
+        os.environ.get("DEMIURGE_SECURITY_AGENTS", "security/policy/agents.yaml")
     )
 
 
@@ -78,7 +78,7 @@ def _get_passphrase(*, confirm: bool = False) -> bytes:
     in non-confirm mode (use the prompt to set the keyring's value, not
     the keyring itself).
     """
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
     if not confirm:
@@ -188,10 +188,10 @@ def cmd_status(args: argparse.Namespace) -> int:
     from . import status
 
     socket_path = os.environ.get(
-        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+        "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
     )
     audit_dir = Path(
-        os.environ.get("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit")
+        os.environ.get("DEMIURGE_SECURITY_AUDIT_DIR", "/var/lib/demiurge/audit")
     )
     print(
         status.render_status(
@@ -352,7 +352,7 @@ def cmd_janus_run(args: argparse.Namespace) -> int:
 
 
 def cmd_wizard_google(args: argparse.Namespace) -> int:
-    """Run the Google Cloud onboarding wizard, then chain into stevens onboard gmail."""
+    """Run the Google Cloud onboarding wizard, then chain into demiurge onboard gmail."""
     from .wizards.google import WizardError, WizardInputs, run_wizard
 
     inputs = WizardInputs(
@@ -369,11 +369,11 @@ def cmd_wizard_google(args: argparse.Namespace) -> int:
     print()
     print("Wizard complete. To finish onboarding a Gmail account, run:")
     print(
-        f"  uv run stevens onboard gmail --client-json {result.client_secret_path} "
+        f"  uv run demiurge onboard gmail --client-json {result.client_secret_path} "
         f"-- --id gmail.personal --name 'Sol personal'"
     )
     print()
-    print("(Then `stevens onboard calendar` for Calendar onboarding using the same client.)")
+    print("(Then `demiurge onboard calendar` for Calendar onboarding using the same client.)")
     return 0
 
 
@@ -389,11 +389,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     from . import doctor
 
     socket_path = os.environ.get(
-        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+        "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
     )
     capabilities_yaml = Path(
         os.environ.get(
-            "STEVENS_SECURITY_POLICY", "security/policy/capabilities.yaml"
+            "DEMIURGE_SECURITY_POLICY", "security/policy/capabilities.yaml"
         )
     )
     report = doctor.run_doctor(
@@ -412,7 +412,7 @@ def cmd_audit_tail(args: argparse.Namespace) -> int:
     from . import audit_tail
 
     audit_dir = args.audit_dir or Path(
-        os.environ.get("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit")
+        os.environ.get("DEMIURGE_SECURITY_AUDIT_DIR", "/var/lib/demiurge/audit")
     )
     if args.follow:
         # Print last N first, then start following.
@@ -512,12 +512,12 @@ def cmd_agent_provision(args: argparse.Namespace) -> int:
         args.capabilities_yaml
         or Path(
             os.environ.get(
-                "STEVENS_SECURITY_POLICY", "security/policy/capabilities.yaml"
+                "DEMIURGE_SECURITY_POLICY", "security/policy/capabilities.yaml"
             )
         )
     )
     socket_path = os.environ.get(
-        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+        "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
     )
     result = provision_agent(
         name=args.name,
@@ -536,7 +536,7 @@ def cmd_agent_provision(args: argparse.Namespace) -> int:
         verb = "applied" if result.preset_changed else "already up to date"
         print(f"  preset:          {result.preset_applied} ({verb})")
     print()
-    print(f"ready — run with: stevens agent run {result.name}")
+    print(f"ready — run with: demiurge agent run {result.name}")
     return 0
 
 
@@ -547,7 +547,7 @@ def cmd_agent_run(args: argparse.Namespace) -> int:
     if not env_path.exists():
         raise SystemExit(
             f"no agent profile at {env_path} — run "
-            f"`stevens agent provision {args.name}` first"
+            f"`demiurge agent provision {args.name}` first"
         )
 
     env = dict(os.environ)
@@ -560,7 +560,7 @@ def cmd_agent_run(args: argparse.Namespace) -> int:
             continue
         env[key] = value
 
-    key_path = Path(env.get("STEVENS_PRIVATE_KEY_PATH", ""))
+    key_path = Path(env.get("DEMIURGE_PRIVATE_KEY_PATH", ""))
     if not key_path.exists():
         raise SystemExit(
             f"private key file not found: {key_path} — re-provision the agent"
@@ -617,14 +617,14 @@ def _add_root_flag(p: argparse.ArgumentParser) -> None:
         "--root",
         type=Path,
         default=None,
-        help="sealed-store root (default: $STEVENS_SECURITY_SECRETS or /var/lib/stevens/secrets)",
+        help="sealed-store root (default: $DEMIURGE_SECURITY_SECRETS or /var/lib/demiurge/secrets)",
     )
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="stevens",
-        description="Stevens admin CLI — talks to Enkidu (the Security Agent).",
+        prog="demiurge",
+        description="Demiurge admin CLI — talks to Enkidu (the Security Agent).",
     )
     top = parser.add_subparsers(dest="cmd", required=True)
 
@@ -683,7 +683,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="first-time setup — Postgres + migrations + systemd units",
         description=(
             "Idempotent first-time setup orchestrator. Wires up native Postgres, "
-            "applies migrations, writes ~/.config/stevens/env, generates systemd "
+            "applies migrations, writes ~/.config/demiurge/env, generates systemd "
             "user units. Never runs sudo itself — prints the one block of "
             "elevated commands the operator needs and stops, then resumes on "
             "re-run."
@@ -718,7 +718,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--audit-dir",
         type=Path,
         default=None,
-        help="audit dir (default: $STEVENS_SECURITY_AUDIT_DIR or /var/lib/stevens/audit)",
+        help="audit dir (default: $DEMIURGE_SECURITY_AUDIT_DIR or /var/lib/demiurge/audit)",
     )
     aud_tail.add_argument(
         "-n", "--lines", type=int, default=20, help="number of trailing lines (default 20)"
@@ -809,13 +809,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--capabilities-yaml",
         type=Path,
         default=None,
-        help="path to capabilities.yaml (default: $STEVENS_SECURITY_POLICY)",
+        help="path to capabilities.yaml (default: $DEMIURGE_SECURITY_POLICY)",
     )
     ap.add_argument(
         "--agents-dir",
         type=Path,
         default=None,
-        help="where to write key + env files (default: ~/.config/stevens/agents)",
+        help="where to write key + env files (default: ~/.config/demiurge/agents)",
     )
     ap.add_argument(
         "--force",
@@ -830,7 +830,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--agents-dir",
         type=Path,
         default=None,
-        help="where to look for the .env / .key files (default: ~/.config/stevens/agents)",
+        help="where to look for the .env / .key files (default: ~/.config/demiurge/agents)",
     )
     ap.set_defaults(fn=cmd_agent_run)
 
@@ -892,7 +892,7 @@ def build_parser() -> argparse.ArgumentParser:
     cha_list.set_defaults(fn=cmd_janus_list)
 
     cha_run = cha_sub.add_parser("run", help="run a recipe")
-    cha_run.add_argument("recipe", help="recipe name (see `stevens janus list`)")
+    cha_run.add_argument("recipe", help="recipe name (see `demiurge janus list`)")
     cha_run.add_argument(
         "--rotate", action="store_true",
         help="overwrite an existing sealed-store secret if the recipe writes one",

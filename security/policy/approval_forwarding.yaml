@@ -20,6 +20,6 @@
 #         account_id: wac.business1
 #
 # Empty rules (the default below) means no forwarding events are emitted —
-# approvals only show up in `stevens approval list`.
+# approvals only show up in `demiurge approval list`.
 
 rules: []

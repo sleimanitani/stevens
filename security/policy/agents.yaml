@@ -7,7 +7,7 @@
 #
 # Keypairs are generated per-install on first boot (see STEVENS.md §3.5).
 # Sol registers a new agent by running:
-#     stevens agent register <name>
+#     demiurge agent register <name>
 # which appends the pubkey below after prompting for confirmation.
 #
 # Schema:

@@ -5,11 +5,11 @@ service in compose (prod).
 
 Configuration comes from environment variables:
 
-- ``STEVENS_SECURITY_SOCKET``    default ``/run/stevens/security.sock``
-- ``STEVENS_SECURITY_AGENTS``    default ``security/policy/agents.yaml``
-- ``STEVENS_SECURITY_POLICY``    default ``security/policy/capabilities.yaml``
-- ``STEVENS_SECURITY_AUDIT_DIR`` default ``/var/lib/stevens/audit``
-- ``STEVENS_SECURITY_SECRETS``   default ``/var/lib/stevens/secrets`` (used once the
+- ``DEMIURGE_SECURITY_SOCKET``    default ``/run/demiurge/security.sock``
+- ``DEMIURGE_SECURITY_AGENTS``    default ``security/policy/agents.yaml``
+- ``DEMIURGE_SECURITY_POLICY``    default ``security/policy/capabilities.yaml``
+- ``DEMIURGE_SECURITY_AUDIT_DIR`` default ``/var/lib/demiurge/audit``
+- ``DEMIURGE_SECURITY_SECRETS``   default ``/var/lib/demiurge/secrets`` (used once the
                                  sealed store lands in steps 9–12; ignored here)
 
 The passphrase prompt for the sealed-store root key (step 11) is not yet
@@ -56,24 +56,24 @@ def _env_path(name: str, default: str) -> Path:
 
 async def _amain() -> int:
     logging.basicConfig(
-        level=os.environ.get("STEVENS_LOG_LEVEL", "INFO"),
+        level=os.environ.get("DEMIURGE_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     log = logging.getLogger("demiurge")
-    log.info("Enkidu — Stevens Security Agent (sole broker for secrets)")
+    log.info("Enkidu — Demiurge Security Agent (Enkidu) (sole broker for secrets)")
 
     socket_path = os.environ.get(
-        "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+        "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
     )
     agents_path = _env_path(
-        "STEVENS_SECURITY_AGENTS",
+        "DEMIURGE_SECURITY_AGENTS",
         str(Path(__file__).resolve().parents[3] / "policy" / "agents.yaml"),
     )
     policy_path = _env_path(
-        "STEVENS_SECURITY_POLICY",
+        "DEMIURGE_SECURITY_POLICY",
         str(Path(__file__).resolve().parents[3] / "policy" / "capabilities.yaml"),
     )
-    audit_dir = _env_path("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit")
+    audit_dir = _env_path("DEMIURGE_SECURITY_AUDIT_DIR", "/var/lib/demiurge/audit")
 
     log.info("loading identity registry from %s", agents_path)
     identity_registry = load_agents_registry(agents_path)
@@ -139,7 +139,7 @@ async def _amain() -> int:
     )
 
     # Approval-replay tracking: when the operator approves a per-call
-    # request via `stevens approval approve`, the CLI invokes the admin
+    # request via `demiurge approval approve`, the CLI invokes the admin
     # capability which adds the request_id here so the dispatcher allows
     # the replayed envelope through the gate.
     approved_replay_ids: set = set()
@@ -258,12 +258,12 @@ def _try_unlock_sealed_store(log):
     """Best-effort sealed-store unlock at boot. Returns the unlocked store
     or None if no passphrase is available.
 
-    Priority: ``$STEVENS_PASSPHRASE`` env → OS keyring → None. We do NOT
+    Priority: ``$DEMIURGE_PASSPHRASE`` env → OS keyring → None. We do NOT
     prompt at boot — Enkidu must come up unattended in compose. Operators
-    who need an interactive unlock can run ``stevens passphrase remember``
+    who need an interactive unlock can run ``demiurge passphrase remember``
     once and let the keyring serve subsequent boots silently.
     """
-    pp_env = os.environ.get("STEVENS_PASSPHRASE")
+    pp_env = os.environ.get("DEMIURGE_PASSPHRASE")
     pp = pp_env.encode("utf-8") if pp_env else None
     if pp is None:
         try:
@@ -279,7 +279,7 @@ def _try_unlock_sealed_store(log):
         from .sealed_store import SealedStore
 
         secrets_root = Path(
-            os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+            os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
         )
         store = SealedStore.unlock(secrets_root, pp)
         log.info("sealed store unlocked")

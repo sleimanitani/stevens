@@ -123,7 +123,7 @@ class PostgresInventory:
     """``Inventory`` Protocol against ``environment_packages`` table.
 
     ``list_for(caller)`` is the agent-scoped read; ``list_global()`` is the
-    operator-scoped read used by ``stevens dep list``.
+    operator-scoped read used by ``demiurge dep list``.
     """
 
     async def append(self, row: InventoryRow) -> str:

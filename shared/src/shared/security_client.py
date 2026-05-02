@@ -1,4 +1,4 @@
-"""Client library for the Stevens Security Agent.
+"""Client library for the Demiurge Security Agent (Enkidu).
 
 Every component that needs a credential or wants to perform a sensitive
 action goes through this. The client signs a request with its own
@@ -100,14 +100,14 @@ def _fresh_nonce() -> str:
 
 
 class SecurityClient:
-    """Async client for the Stevens Security Agent.
+    """Async client for the Demiurge Security Agent (Enkidu).
 
     Typical use::
 
         client = SecurityClient.from_key_file(
-            socket_path="/run/stevens/security.sock",
+            socket_path="/run/demiurge/security.sock",
             caller_name="email_pm",
-            private_key_path="/run/stevens/keys/email_pm.key",
+            private_key_path="/run/demiurge/keys/email_pm.key",
         )
         result = await client.call("gmail.send_draft", {
             "account_id": "gmail.personal",

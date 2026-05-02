@@ -95,11 +95,11 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
-      STEVENS_CALLER_NAME: whatsapp_cloud_adapter
-      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/whatsapp_cloud_adapter.key
+      DEMIURGE_SECURITY_SOCKET: /run/demiurge/security.sock
+      DEMIURGE_CALLER_NAME: whatsapp_cloud_adapter
+      DEMIURGE_PRIVATE_KEY_PATH: /run/demiurge/keys/whatsapp_cloud_adapter.key
     volumes:
-      - stevens-sock:/run/stevens:ro
+      - stevens-sock:/run/demiurge:ro
     ports:
       # Only bound to localhost. Funnel-exposed externally for Meta's webhook.
       - "127.0.0.1:8082:8082"
@@ -114,11 +114,11 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
-      STEVENS_CALLER_NAME: calendar_adapter
-      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/calendar_adapter.key
+      DEMIURGE_SECURITY_SOCKET: /run/demiurge/security.sock
+      DEMIURGE_CALLER_NAME: calendar_adapter
+      DEMIURGE_PRIVATE_KEY_PATH: /run/demiurge/keys/calendar_adapter.key
     volumes:
-      - stevens-sock:/run/stevens:ro
+      - stevens-sock:/run/demiurge:ro
     ports:
       - "127.0.0.1:8083:8083"
     extra_hosts:
@@ -148,15 +148,15 @@ services:
         condition: service_started
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
-      STEVENS_CALLER_NAME: signal_adapter
-      STEVENS_PRIVATE_KEY_PATH: /run/stevens/keys/signal_adapter.key
+      DEMIURGE_SECURITY_SOCKET: /run/demiurge/security.sock
+      DEMIURGE_CALLER_NAME: signal_adapter
+      DEMIURGE_PRIVATE_KEY_PATH: /run/demiurge/keys/signal_adapter.key
       SIGNAL_DAEMON_URL: http://signal-cli-rest-api:8080
       # SIGNAL_ACCOUNT_ID + SIGNAL_PHONE supplied per-account at runtime
       # (operator runs add_account first, then sets these env vars and
       # restarts this service — multi-account is one container per phone).
     volumes:
-      - stevens-sock:/run/stevens:ro
+      - stevens-sock:/run/demiurge:ro
 
   agents:
     build:
@@ -175,9 +175,9 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       GMAIL_ADAPTER_URL: http://gmail-adapter:8080
       WHATSAPP_ADAPTER_URL: http://whatsapp-adapter:8081
-      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
+      DEMIURGE_SECURITY_SOCKET: /run/demiurge/security.sock
     volumes:
-      - stevens-sock:/run/stevens:ro
+      - stevens-sock:/run/demiurge:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -187,16 +187,16 @@ services:
       dockerfile: security/Dockerfile
     restart: unless-stopped
     environment:
-      STEVENS_SECURITY_SOCKET: /run/stevens/security.sock
-      STEVENS_SECURITY_AUDIT_DIR: /var/lib/stevens/audit
-      STEVENS_SECURITY_SECRETS: /var/lib/stevens/secrets
-      STEVENS_LOG_LEVEL: ${STEVENS_LOG_LEVEL:-INFO}
+      DEMIURGE_SECURITY_SOCKET: /run/demiurge/security.sock
+      DEMIURGE_SECURITY_AUDIT_DIR: /var/lib/demiurge/audit
+      DEMIURGE_SECURITY_SECRETS: /var/lib/demiurge/secrets
+      DEMIURGE_LOG_LEVEL: ${DEMIURGE_LOG_LEVEL:-INFO}
     volumes:
       # Socket surface — agents mount this read-only. Only the security
-      # container writes into /run/stevens (the socket file itself).
-      - stevens-sock:/run/stevens
-      - stevens-audit:/var/lib/stevens/audit
-      - stevens-secrets:/var/lib/stevens/secrets
+      # container writes into /run/demiurge (the socket file itself).
+      - stevens-sock:/run/demiurge
+      - stevens-audit:/var/lib/demiurge/audit
+      - stevens-secrets:/var/lib/demiurge/secrets
     read_only: true
     tmpfs:
       - /tmp

@@ -232,7 +232,7 @@ def test_install_instructions_unknown_platform():
 
 
 def test_write_env_file_creates_new(tmp_path: Path):
-    target = tmp_path / "stevens" / "env"
+    target = tmp_path / "demiurge" / "env"
     path, changed = bp.write_env_file(dsn="postgresql:///x", path=target)
     assert path == target
     assert changed is True
@@ -263,14 +263,14 @@ def test_write_env_file_replaces_existing_value(tmp_path: Path):
 
 def test_env_file_path_uses_xdg(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-    assert bp.env_file_path() == tmp_path / "stevens" / "env"
+    assert bp.env_file_path() == tmp_path / "demiurge" / "env"
 
 
 def test_env_file_path_default(monkeypatch, tmp_path: Path):
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     p = bp.env_file_path()
-    assert p == tmp_path / ".config" / "stevens" / "env"
+    assert p == tmp_path / ".config" / "demiurge" / "env"
 
 
 # ----------------------------- format_state ------------------------------

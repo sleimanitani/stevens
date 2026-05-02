@@ -58,7 +58,7 @@ def test_proposing_agent_required() -> None:
 
 
 def test_writes_file_at_expected_path(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("STEVENS_SKILLS_PROPOSED", str(tmp_path))
+    monkeypatch.setenv("DEMIURGE_SKILLS_PROPOSED", str(tmp_path))
     fake_uuid = "abcd1234-0000-0000-0000-000000000000"
 
     async def fake_insert(**kwargs):
@@ -81,7 +81,7 @@ def test_writes_file_at_expected_path(tmp_path: Path, monkeypatch) -> None:
 
 
 def test_tool_writes_py_extension(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("STEVENS_SKILLS_PROPOSED", str(tmp_path))
+    monkeypatch.setenv("DEMIURGE_SKILLS_PROPOSED", str(tmp_path))
 
     async def fake_insert(**kwargs):
         import uuid as _uuid
@@ -104,7 +104,7 @@ def test_returns_proposal_id_only_not_path(tmp_path: Path, monkeypatch) -> None:
     to load its own proposal — by convention, ProposalResult is for
     audit reference, not loading.
     """
-    monkeypatch.setenv("STEVENS_SKILLS_PROPOSED", str(tmp_path))
+    monkeypatch.setenv("DEMIURGE_SKILLS_PROPOSED", str(tmp_path))
     import uuid as _uuid
 
     async def fake_insert(**kwargs):

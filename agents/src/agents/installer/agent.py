@@ -5,14 +5,14 @@ Enkidu to install packages via the privileged-execution protocol; never
 runs sudo itself.
 
 The runtime invokes ``handle(event, config)`` per event. The agent uses a
-``SecurityClient`` (from env: STEVENS_CALLER_NAME / STEVENS_PRIVATE_KEY_PATH
-/ STEVENS_SECURITY_SOCKET) to talk to Enkidu and a bus publisher to emit
+``SecurityClient`` (from env: DEMIURGE_CALLER_NAME / DEMIURGE_PRIVATE_KEY_PATH
+/ DEMIURGE_SECURITY_SOCKET) to talk to Enkidu and a bus publisher to emit
 outcome events.
 
 Outcome events:
 - ``system.dep.installed.<name>`` — install succeeded, inventory written.
 - ``system.dep.awaiting_approval.<name>`` — Enkidu returned BLOCKED. The
-  ``approval_request_id`` is in the payload; ``stevens dep ensure --wait``
+  ``approval_request_id`` is in the payload; ``demiurge dep ensure --wait``
   subscribes to this topic to know when to re-poll.
 - ``system.dep.failed.<name>`` — explicit failure (denied, validation,
   health check). Payload has reason + (optional) error code.
@@ -52,12 +52,12 @@ def _client() -> SecurityClient:
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
-    socket_path = os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
-    caller = os.environ.get("STEVENS_CALLER_NAME", "installer")
-    key_path = os.environ.get("STEVENS_PRIVATE_KEY_PATH")
+    socket_path = os.environ.get("DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock")
+    caller = os.environ.get("DEMIURGE_CALLER_NAME", "installer")
+    key_path = os.environ.get("DEMIURGE_PRIVATE_KEY_PATH")
     if not key_path:
         raise RuntimeError(
-            "STEVENS_PRIVATE_KEY_PATH must be set for the installer agent"
+            "DEMIURGE_PRIVATE_KEY_PATH must be set for the installer agent"
         )
     _CLIENT = SecurityClient.from_key_file(
         socket_path=socket_path,

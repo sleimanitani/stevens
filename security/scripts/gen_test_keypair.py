@@ -2,7 +2,7 @@
 
 Writes the private key (base64) to ``<name>.key`` in the current directory
 and appends the public key to ``security/policy/agents.yaml``. Meant only
-for local testing — the production flow is ``stevens agent register <name>``
+for local testing — the production flow is ``demiurge agent register <name>``
 (step 14), which goes through the sealed secret store.
 
 Usage::

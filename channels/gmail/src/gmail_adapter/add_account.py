@@ -16,7 +16,7 @@ Usage::
 
 Requires:
 
-- ``STEVENS_PASSPHRASE`` in env (one-shot unlock for the sealed store),
+- ``DEMIURGE_PASSPHRASE`` in env (one-shot unlock for the sealed store),
   or interactive prompt via ``getpass``.
 - ``GMAIL_PUBSUB_TOPIC`` env (full ``projects/.../topics/...`` form).
 - ``DATABASE_URL`` env for the channel_accounts insert.
@@ -44,7 +44,7 @@ _SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
 
 def _load_passphrase() -> bytes:
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
     return getpass.getpass("sealed-store passphrase: ").encode("utf-8")
@@ -56,7 +56,7 @@ def _open_store():
     from demiurge.sealed_store import SealedStore
 
     root = Path(
-        os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+        os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
     )
     return SealedStore.unlock(root, _load_passphrase())
 

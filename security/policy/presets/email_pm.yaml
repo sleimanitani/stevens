@@ -4,7 +4,7 @@
 # on Gmail accounts; reads (but does not modify) calendar events for context.
 #
 # Apply with:
-#   stevens agent provision email_pm --preset email_pm
+#   demiurge agent provision email_pm --preset email_pm
 #
 # This preset is INTENDED for an agent literally named `email_pm`. If you
 # pick a different name, pass --preset email_pm anyway — the merger writes

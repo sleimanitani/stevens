@@ -8,7 +8,7 @@ Linux. Services run as the operator's own OS user (no root, no
 Why user units, not system units:
 - No sudo on install. The whole point of v0.10 is that everyday operation
   needs zero elevated privileges. System units would put us back to
-  ``sudo systemctl start stevens-security`` for every change.
+  ``sudo systemctl start demiurge-security`` for every change.
 - Files live in ``~/.config/systemd/user/``, owned by the operator. No
   ``/etc/systemd/system`` writes, no ``systemctl daemon-reload`` requiring
   root.
@@ -57,7 +57,7 @@ class ServiceUnit:
     <repo>`` in ``ExecStart=``. Don't include ``uv run`` in it.
 
     ``after`` is the list of systemd unit names this service should start
-    after (e.g. ``stevens-security.service``). The Postgres dependency is
+    after (e.g. ``demiurge-security.service``). The Postgres dependency is
     expressed as ``postgresql.service`` (the system-level unit installed by
     PGDG).
     """
@@ -70,7 +70,7 @@ class ServiceUnit:
     extra_env: tuple[tuple[str, str], ...] = ()
 
 
-SECURITY_UNIT = "stevens-security.service"
+SECURITY_UNIT = "demiurge-security.service"
 POSTGRES_UNIT = "postgresql.service"
 
 # The order here matches the dependency DAG: security first (no deps),
@@ -78,46 +78,46 @@ POSTGRES_UNIT = "postgresql.service"
 # runtime (which talks to all the adapters).
 DEFAULT_SERVICES: tuple[ServiceUnit, ...] = (
     ServiceUnit(
-        name="stevens-security",
-        description="Stevens Security Agent (Enkidu) — sole secret broker",
+        name="demiurge-security",
+        description="Demiurge Security Agent (Enkidu) (Enkidu) — sole secret broker",
         exec_cmd="python -m demiurge",
     ),
     ServiceUnit(
-        name="stevens-gmail-adapter",
-        description="Stevens — Gmail channel adapter",
+        name="demiurge-gmail-adapter",
+        description="Demiurge — Gmail channel adapter",
         exec_cmd="uvicorn gmail_adapter.main:app --host 127.0.0.1 --port 8080",
         after=(SECURITY_UNIT, POSTGRES_UNIT),
     ),
     ServiceUnit(
-        name="stevens-calendar-adapter",
-        description="Stevens — Google Calendar channel adapter",
+        name="demiurge-calendar-adapter",
+        description="Demiurge — Google Calendar channel adapter",
         exec_cmd="uvicorn calendar_adapter.main:app --host 127.0.0.1 --port 8083",
         after=(SECURITY_UNIT, POSTGRES_UNIT),
         extra_env=(
-            ("STEVENS_CALLER_NAME", "calendar_adapter"),
+            ("DEMIURGE_CALLER_NAME", "calendar_adapter"),
         ),
     ),
     ServiceUnit(
-        name="stevens-whatsapp-cloud-adapter",
-        description="Stevens — WhatsApp Cloud channel adapter",
+        name="demiurge-whatsapp-cloud-adapter",
+        description="Demiurge — WhatsApp Cloud channel adapter",
         exec_cmd="uvicorn whatsapp_cloud_adapter.main:app --host 127.0.0.1 --port 8082",
         after=(SECURITY_UNIT, POSTGRES_UNIT),
         extra_env=(
-            ("STEVENS_CALLER_NAME", "whatsapp_cloud_adapter"),
+            ("DEMIURGE_CALLER_NAME", "whatsapp_cloud_adapter"),
         ),
     ),
     ServiceUnit(
-        name="stevens-signal-adapter",
-        description="Stevens — Signal channel adapter",
+        name="demiurge-signal-adapter",
+        description="Demiurge — Signal channel adapter",
         exec_cmd="python -m signal_adapter",
         after=(SECURITY_UNIT, POSTGRES_UNIT),
         extra_env=(
-            ("STEVENS_CALLER_NAME", "signal_adapter"),
+            ("DEMIURGE_CALLER_NAME", "signal_adapter"),
         ),
     ),
     ServiceUnit(
-        name="stevens-agents",
-        description="Stevens — agents runtime (Mortals + supervisors)",
+        name="demiurge-agents",
+        description="Demiurge — agents runtime (Mortals + supervisors)",
         exec_cmd="python -m agents.runtime",
         after=(SECURITY_UNIT, POSTGRES_UNIT),
     ),

@@ -1,11 +1,11 @@
-"""``stevens reset`` — wipe local Stevens state for fresh-install testing.
+"""``demiurge reset`` — wipe local Stevens state for fresh-install testing.
 
 What gets wiped:
-- Sealed store directory (``$STEVENS_SECURITY_SECRETS`` or default)
-- Audit logs (``$STEVENS_SECURITY_AUDIT_DIR`` or default)
-- Agent keys + env profiles (``~/.config/stevens/agents/``)
-- Janus persistent browser profile (``~/.config/stevens/janus-profile/``)
-- OS keyring passphrase entry (``stevens passphrase forget``)
+- Sealed store directory (``$DEMIURGE_SECURITY_SECRETS`` or default)
+- Audit logs (``$DEMIURGE_SECURITY_AUDIT_DIR`` or default)
+- Agent keys + env profiles (``~/.config/demiurge/agents/``)
+- Janus persistent browser profile (``~/.config/demiurge/janus-profile/``)
+- OS keyring passphrase entry (``demiurge passphrase forget``)
 - All Stevens-owned Postgres tables (TRUNCATE; schema preserved):
     channel_accounts, skill_proposals, standing_approvals,
     approval_requests, install_plans, environment_packages,
@@ -19,7 +19,7 @@ What is **not** touched:
 - Postgres itself (we truncate; we don't drop the database)
 - Downloaded ``client_secret*.json`` files in ~/Downloads/ (those are yours)
 - Migrations (the schema stays)
-- Any data outside ``$STEVENS_SECURITY_*`` paths and ``~/.config/stevens/``
+- Any data outside ``$DEMIURGE_SECURITY_*`` paths and ``~/.config/demiurge/``
 
 Default mode is **dry-run**: prints the wipe plan, takes no action.
 Pass ``--yes`` to actually execute (with one final confirmation), or
@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 
 
 # Stevens-owned tables to TRUNCATE (RESTART IDENTITY CASCADE for safety).
-_STEVENS_TABLES = (
+_DEMIURGE_TABLES = (
     "approval_requests",
     "standing_approvals",
     "environment_packages",
@@ -56,7 +56,7 @@ _STEVENS_TABLES = (
 
 @dataclass
 class ResetPlan:
-    """What ``stevens reset`` would wipe. Pure data; printable."""
+    """What ``demiurge reset`` would wipe. Pure data; printable."""
 
     sealed_store_dir: Optional[Path] = None
     audit_dir: Optional[Path] = None
@@ -67,7 +67,7 @@ class ResetPlan:
     postgres_tables: List[str] = field(default_factory=list)
 
     def render(self) -> str:
-        lines = ["stevens reset — would wipe:"]
+        lines = ["demiurge reset — would wipe:"]
         if self.sealed_store_dir is not None:
             exists = self.sealed_store_dir.exists()
             lines.append(f"  - sealed store dir: {self.sealed_store_dir} {'[exists]' if exists else '[absent]'}")
@@ -81,7 +81,7 @@ class ResetPlan:
             exists = self.janus_profile_dir.exists()
             lines.append(f"  - Janus profile:    {self.janus_profile_dir} {'[exists]' if exists else '[absent]'}")
         if self.keyring_entry:
-            lines.append("  - OS keyring entry: stevens-security/vault (if present)")
+            lines.append("  - OS keyring entry: demiurge-security/vault (if present)")
         if self.pdf_corpus_dir is not None:
             exists = self.pdf_corpus_dir.exists()
             lines.append(f"  - PDF corpus cache: {self.pdf_corpus_dir} {'[exists]' if exists else '[absent]'}")
@@ -96,15 +96,15 @@ class ResetPlan:
 
 def _config_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "stevens"
+    return Path(base) / "demiurge"
 
 
 def _default_sealed_store() -> Path:
-    return Path(os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets"))
+    return Path(os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets"))
 
 
 def _default_audit_dir() -> Path:
-    return Path(os.environ.get("STEVENS_SECURITY_AUDIT_DIR", "/var/lib/stevens/audit"))
+    return Path(os.environ.get("DEMIURGE_SECURITY_AUDIT_DIR", "/var/lib/demiurge/audit"))
 
 
 def _default_pdf_corpus_dir() -> Path:
@@ -135,7 +135,7 @@ def build_plan(
     if not keep_pdf_corpus:
         plan.pdf_corpus_dir = _default_pdf_corpus_dir()
     if not keep_postgres:
-        plan.postgres_tables = list(_STEVENS_TABLES)
+        plan.postgres_tables = list(_DEMIURGE_TABLES)
     return plan
 
 
@@ -151,7 +151,7 @@ def _clear_keyring() -> str:
         from . import keyring_passphrase
 
         keyring_passphrase.clear()
-        return "  ✓ cleared keyring entry stevens-security/vault"
+        return "  ✓ cleared keyring entry demiurge-security/vault"
     except Exception as e:  # noqa: BLE001
         return f"  · keyring not available or already empty ({e})"
 
@@ -219,13 +219,13 @@ def post_wipe_next_steps() -> str:
     return "\n".join([
         "",
         "fresh install — to start over from scratch:",
-        "  1. uv run stevens secrets init",
-        "  2. uv run stevens passphrase remember     # opt-in: silent unlocks",
-        "  3. uv run stevens wizard google --project-id stevens-personal",
+        "  1. uv run demiurge secrets init",
+        "  2. uv run demiurge passphrase remember     # opt-in: silent unlocks",
+        "  3. uv run demiurge wizard google --project-id stevens-personal",
         "     (or whatever channel you're onboarding first)",
-        "  4. uv run stevens janus run google_oauth_client --project-id stevens-personal",
-        "  5. uv run stevens onboard gmail --client-json ~/Downloads/client_secret_*.json -- --id gmail.personal --name 'Sol personal'",
-        "  6. uv run stevens agent provision email_pm --preset email_pm",
-        "  7. uv run stevens agent run email_pm",
+        "  4. uv run demiurge janus run google_oauth_client --project-id stevens-personal",
+        "  5. uv run demiurge onboard gmail --client-json ~/Downloads/client_secret_*.json -- --id gmail.personal --name 'Sol personal'",
+        "  6. uv run demiurge agent provision email_pm --preset email_pm",
+        "  7. uv run demiurge agent run email_pm",
         "",
     ])

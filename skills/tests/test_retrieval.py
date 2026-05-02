@@ -206,5 +206,5 @@ def test_env_var_max(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         ))
     reg = _build_registry(tmp_path, entries)
     ev = FakeEvent(topic="x", subject="match")
-    monkeypatch.setenv("STEVENS_MAX_PLAYBOOKS", "1")
+    monkeypatch.setenv("DEMIURGE_MAX_PLAYBOOKS", "1")
     assert len(get_playbooks_for("any", ev, registry=reg)) == 1

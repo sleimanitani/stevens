@@ -5,7 +5,7 @@
 # constraint as email_pm; sending requires explicit opt-in (not in v0.1).
 #
 # Apply with:
-#   stevens agent provision <name> --preset subject_agent
+#   demiurge agent provision <name> --preset subject_agent
 
 allow:
   # Gmail

@@ -1,6 +1,6 @@
 """AdminClient — operator-side helper that signs admin-capability calls.
 
-Used by the ``stevens approval`` CLI to nudge a running Enkidu after grants /
+Used by the ``demiurge approval`` CLI to nudge a running Enkidu after grants /
 revokes / approvals (refresh the in-memory matcher, mark a request_id as
 approved-replay-ready). Best-effort: if the operator key file is missing or
 the UDS isn't there, the helper logs and returns silently — admin nudges
@@ -8,8 +8,8 @@ are convenience, not correctness. The next Enkidu boot will pick the new
 state up from the DB regardless.
 
 Operator key path resolution (in order):
-  1. ``$STEVENS_OPERATOR_PRIVATE_KEY_PATH``
-  2. ``~/.config/stevens/agents/operator.key``
+  1. ``$DEMIURGE_OPERATOR_PRIVATE_KEY_PATH``
+  2. ``~/.config/demiurge/agents/operator.key``
 """
 
 from __future__ import annotations
@@ -24,15 +24,15 @@ log = logging.getLogger(__name__)
 
 
 def _operator_key_path() -> Path:
-    env = os.environ.get("STEVENS_OPERATOR_PRIVATE_KEY_PATH")
+    env = os.environ.get("DEMIURGE_OPERATOR_PRIVATE_KEY_PATH")
     if env:
         return Path(env)
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "stevens" / "agents" / "operator.key"
+    return Path(base) / "demiurge" / "agents" / "operator.key"
 
 
 def _socket_path() -> str:
-    return os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
+    return os.environ.get("DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock")
 
 
 class AdminClient:

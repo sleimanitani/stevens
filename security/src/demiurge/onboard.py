@@ -1,4 +1,4 @@
-"""Channel onboarding — `stevens onboard <channel>`.
+"""Channel onboarding — `demiurge onboard <channel>`.
 
 Wraps the per-channel ``add_account`` CLIs so the operator runs one
 command per account instead of three (ingest OAuth client → shred file →
@@ -140,7 +140,7 @@ def ingest_google_oauth_client(
         # Half-installed — refuse to proceed.
         raise OnboardError(
             f"sealed store has only one of {id_name!r}/{secret_name!r}; "
-            f"resolve manually with `stevens secrets list` before continuing"
+            f"resolve manually with `demiurge secrets list` before continuing"
         )
 
     store.add(

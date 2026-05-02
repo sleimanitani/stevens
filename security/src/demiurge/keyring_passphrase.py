@@ -2,19 +2,19 @@
 
 Opt-in. The operator runs::
 
-    stevens passphrase remember
+    demiurge passphrase remember
 
 …to stash the passphrase in the OS keyring (libsecret on Linux, Keychain
 on macOS, Credential Manager on Windows). On every subsequent operation
 that needs the passphrase, the CLI and Enkidu's ``__main__`` consult the
-keyring **before** falling back to ``$STEVENS_PASSPHRASE`` env or an
+keyring **before** falling back to ``$DEMIURGE_PASSPHRASE`` env or an
 interactive prompt.
 
 Trade-off: with keyring enabled, anyone with your unlocked desktop session
 can also unlock the vault. Acceptable for a single-user laptop where the
 threat model is "stop a compromised agent process from leaking tokens,"
 not "stop someone with desktop access." On a shared host or server,
-don't use this — leave it off, set ``STEVENS_PASSPHRASE`` from a deploy
+don't use this — leave it off, set ``DEMIURGE_PASSPHRASE`` from a deploy
 secret, or just type at the prompt.
 """
 
@@ -25,7 +25,7 @@ from typing import Optional
 
 log = logging.getLogger(__name__)
 
-SERVICE = "stevens-security"
+SERVICE = "demiurge-security"
 ACCOUNT = "vault"
 
 
@@ -50,7 +50,7 @@ def _get_keyring():
     if isinstance(backend, FailKeyring):
         raise KeyringUnavailable(
             "no keyring backend available — install gnome-keyring / KWallet "
-            "/ macOS Keychain, or run with $STEVENS_PASSPHRASE env"
+            "/ macOS Keychain, or run with $DEMIURGE_PASSPHRASE env"
         )
     return keyring
 

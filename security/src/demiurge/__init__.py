@@ -1,4 +1,4 @@
-"""Stevens Security Agent — sole broker for all secrets and sensitive operations.
+"""Demiurge Security Agent (Enkidu) — sole broker for all secrets and sensitive operations.
 
 See STEVENS.md §3 and plans/v0.1-sec.md for the charter and current milestone.
 This package is the only component that reads the sealed secret store at rest

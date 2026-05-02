@@ -1,4 +1,4 @@
-"""Policy presets — opinionated allow-rule bundles for `stevens agent provision`.
+"""Policy presets — opinionated allow-rule bundles for `demiurge agent provision`.
 
 A preset is a YAML file at ``security/policy/presets/<name>.yaml`` whose
 top-level shape is just::
@@ -48,11 +48,11 @@ def _presets_dir() -> Path:
 
     Resolution: walks up from this file (``…/src/demiurge/presets.py``)
     to the ``security/`` package root, then ``policy/presets``. Override
-    with ``$STEVENS_SECURITY_PRESETS`` for tests.
+    with ``$DEMIURGE_SECURITY_PRESETS`` for tests.
     """
     import os
 
-    env = os.environ.get("STEVENS_SECURITY_PRESETS")
+    env = os.environ.get("DEMIURGE_SECURITY_PRESETS")
     if env:
         return Path(env)
     return Path(__file__).resolve().parents[2] / "policy" / "presets"

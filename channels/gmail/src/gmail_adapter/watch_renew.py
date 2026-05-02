@@ -35,10 +35,10 @@ def _security_client() -> SecurityClient:
         return _CLIENT
     _CLIENT = SecurityClient.from_key_file(
         socket_path=os.environ.get(
-            "STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock"
+            "DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock"
         ),
-        caller_name=os.environ.get("STEVENS_CALLER_NAME", "gmail_adapter"),
-        private_key_path=os.environ["STEVENS_PRIVATE_KEY_PATH"],
+        caller_name=os.environ.get("DEMIURGE_CALLER_NAME", "gmail_adapter"),
+        private_key_path=os.environ["DEMIURGE_PRIVATE_KEY_PATH"],
     )
     return _CLIENT
 

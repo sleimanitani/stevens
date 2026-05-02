@@ -5,7 +5,7 @@
 # almost no broker-mediated capabilities of its own; just ping for liveness.
 #
 # Apply with:
-#   stevens agent provision interface --preset interface
+#   demiurge agent provision interface --preset interface
 
 allow:
   - capability: ping

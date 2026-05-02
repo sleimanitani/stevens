@@ -11,7 +11,7 @@ from demiurge.admin_client import AdminClient
 
 
 def test_try_create_no_key_returns_none(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("STEVENS_OPERATOR_PRIVATE_KEY_PATH", str(tmp_path / "missing.key"))
+    monkeypatch.setenv("DEMIURGE_OPERATOR_PRIVATE_KEY_PATH", str(tmp_path / "missing.key"))
     assert AdminClient.try_create() is None
 
 

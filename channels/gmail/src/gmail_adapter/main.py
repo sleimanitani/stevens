@@ -52,9 +52,9 @@ def _security_client() -> SecurityClient:
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
-    socket = os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
-    caller = os.environ.get("STEVENS_CALLER_NAME", "gmail_adapter")
-    key_path = os.environ["STEVENS_PRIVATE_KEY_PATH"]
+    socket = os.environ.get("DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock")
+    caller = os.environ.get("DEMIURGE_CALLER_NAME", "gmail_adapter")
+    key_path = os.environ["DEMIURGE_PRIVATE_KEY_PATH"]
     _CLIENT = SecurityClient.from_key_file(
         socket_path=socket,
         caller_name=caller,

@@ -46,11 +46,11 @@ _CREATE_BTN = "button:has-text('Create'), button:has-text('CREATE')"
 class GoogleOAuthClientRecipe:
     name = "google_oauth_client"
     description = (
-        "Drive the manual half of `stevens wizard google` — OAuth consent "
+        "Drive the manual half of `demiurge wizard google` — OAuth consent "
         "screen + Desktop OAuth client creation + JSON download."
     )
     prerequisites = [
-        "a GCP project (run `stevens wizard google` first to create one)",
+        "a GCP project (run `demiurge wizard google` first to create one)",
         "you're already signed into Google in the browser Janus will open",
     ]
 
@@ -101,7 +101,7 @@ class GoogleOAuthClientRecipe:
             OperatorAction(
                 "GCP should now show a popup with your client_id and a "
                 "'Download JSON' button. Click Download JSON — the file lands "
-                "in your Downloads folder. Then press Enter; `stevens wizard "
+                "in your Downloads folder. Then press Enter; `demiurge wizard "
                 "google` will pick it up from there."
             ),
         ]

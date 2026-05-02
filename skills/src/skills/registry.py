@@ -146,7 +146,7 @@ def load_registry(
 
 
 def _default_registry_path() -> Path:
-    env = os.environ.get("STEVENS_SKILLS_REGISTRY")
+    env = os.environ.get("DEMIURGE_SKILLS_REGISTRY")
     if env:
         return Path(env)
     return Path(__file__).resolve().parents[2] / "registry.yaml"

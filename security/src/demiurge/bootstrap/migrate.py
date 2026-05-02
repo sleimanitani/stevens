@@ -24,7 +24,7 @@ def _default_migrations_dir() -> Path:
     """Locate the repo's migrations dir from this file's location.
 
     Works in dev (editable install). When the package is pip-installed from a
-    wheel, callers must pass an explicit path or set ``$STEVENS_MIGRATIONS_DIR``.
+    wheel, callers must pass an explicit path or set ``$DEMIURGE_MIGRATIONS_DIR``.
     """
     return Path(__file__).resolve().parents[4] / "resources" / "migrations"
 
@@ -32,7 +32,7 @@ def _default_migrations_dir() -> Path:
 def _resolve_migrations_dir(arg: str | None) -> Path:
     if arg:
         return Path(arg).expanduser().resolve()
-    env = os.environ.get("STEVENS_MIGRATIONS_DIR")
+    env = os.environ.get("DEMIURGE_MIGRATIONS_DIR")
     if env:
         return Path(env).expanduser().resolve()
     return _default_migrations_dir()

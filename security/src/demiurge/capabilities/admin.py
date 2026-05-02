@@ -1,13 +1,13 @@
 """``_admin.*`` capabilities — operator-only signals into a running Enkidu.
 
-These exist so the operator CLI (`stevens approval grant/revoke/approve`)
+These exist so the operator CLI (`demiurge approval grant/revoke/approve`)
 can tell a running Enkidu "I just changed the DB; please refresh your
 in-memory matcher" or "this per-call approval was just decided; please
 expect a replay envelope."
 
 The ``_admin`` namespace is allowed only for the ``operator`` caller in
 the policy YAML — no agent should ever invoke these. Sol provisions an
-``operator`` agent identity once via ``stevens agent provision operator``
+``operator`` agent identity once via ``demiurge agent provision operator``
 and the CLI signs admin calls with the operator's keypair.
 """
 

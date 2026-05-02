@@ -2,7 +2,7 @@
 
 When a `requires_approval: true` capability call has no covering standing
 approval, Enkidu writes a row here, returns BLOCKED, and waits for Sol's
-decision via the `stevens approval` CLI.
+decision via the `demiurge approval` CLI.
 
 The queue is backed by Postgres (`approval_requests` table) but for unit
 tests we provide an in-memory implementation conforming to the same

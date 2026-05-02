@@ -19,7 +19,7 @@ And inserts a ``channel_accounts`` row with ``channel_type='whatsapp_cloud'``,
 
 One-time prerequisite: store the shared app secret::
 
-    echo -n "$APP_SECRET" | uv run stevens secrets add whatsapp_cloud.app_secret --from-stdin
+    echo -n "$APP_SECRET" | uv run demiurge secrets add whatsapp_cloud.app_secret --from-stdin
 
 This is the key used to HMAC-verify inbound webhooks. Same value for all
 accounts under one Meta app.
@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 
 
 def _load_passphrase() -> bytes:
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
     return getpass.getpass("sealed-store passphrase: ").encode("utf-8")
@@ -52,7 +52,7 @@ def _open_store():
     from demiurge.sealed_store import SealedStore
 
     root = Path(
-        os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+        os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
     )
     return SealedStore.unlock(root, _load_passphrase())
 

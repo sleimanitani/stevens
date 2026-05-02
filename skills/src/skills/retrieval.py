@@ -20,7 +20,7 @@ Returns up to ``max_playbooks`` playbooks, ranked by trigger specificity
 specificity ranking with a real relevance score.
 
 Cap defaults to 3 (lower than the spec's 5) to leave headroom in
-Qwen3-30B's context window. Override via ``$STEVENS_MAX_PLAYBOOKS``.
+Qwen3-30B's context window. Override via ``$DEMIURGE_MAX_PLAYBOOKS``.
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def _agent_matches(agent_name: str, agents: List[str]) -> bool:
 
 
 def _max_from_env(default: int) -> int:
-    raw = os.environ.get("STEVENS_MAX_PLAYBOOKS")
+    raw = os.environ.get("DEMIURGE_MAX_PLAYBOOKS")
     if raw is None:
         return default
     try:

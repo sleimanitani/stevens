@@ -1,5 +1,5 @@
-"""Shared preflight predicates used by both ``stevens bootstrap`` and
-``stevens doctor``.
+"""Shared preflight predicates used by both ``demiurge bootstrap`` and
+``demiurge doctor``.
 
 v0.10 step 5. Pulled out of ``cli_bootstrap.py`` so the two consumers can
 share the docker-group check (which has different policies — bootstrap

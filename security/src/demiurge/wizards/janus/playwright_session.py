@@ -4,7 +4,7 @@ Lazy-imports playwright so the security package can be imported without
 playwright installed (operators who never run Janus don't pay the
 ~150MB install cost).
 
-Persistent context dir: ``~/.config/stevens/janus-profile/`` — keeps
+Persistent context dir: ``~/.config/demiurge/janus-profile/`` — keeps
 cookies + sign-ins across runs so the operator doesn't re-auth each
 time.
 """
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 def _profile_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "stevens" / "janus-profile"
+    return Path(base) / "demiurge" / "janus-profile"
 
 
 class PlaywrightSession:

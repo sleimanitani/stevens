@@ -38,12 +38,12 @@ def _client() -> SecurityClient:
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
-    socket_path = os.environ.get("STEVENS_SECURITY_SOCKET", "/run/stevens/security.sock")
-    caller = os.environ.get("STEVENS_CALLER_NAME", "arachne")
-    key_path = os.environ.get("STEVENS_PRIVATE_KEY_PATH")
+    socket_path = os.environ.get("DEMIURGE_SECURITY_SOCKET", "/run/demiurge/security.sock")
+    caller = os.environ.get("DEMIURGE_CALLER_NAME", "arachne")
+    key_path = os.environ.get("DEMIURGE_PRIVATE_KEY_PATH")
     if not key_path:
         raise RuntimeError(
-            "STEVENS_PRIVATE_KEY_PATH must be set for the arachne agent"
+            "DEMIURGE_PRIVATE_KEY_PATH must be set for the arachne agent"
         )
     _CLIENT = SecurityClient.from_key_file(
         socket_path=socket_path,
@@ -62,7 +62,7 @@ def _semaphore() -> asyncio.Semaphore:
     global _SEMAPHORE
     if _SEMAPHORE is not None:
         return _SEMAPHORE
-    workers = int(os.environ.get("STEVENS_WEB_WORKERS", _DEFAULT_WORKERS))
+    workers = int(os.environ.get("DEMIURGE_WEB_WORKERS", _DEFAULT_WORKERS))
     _SEMAPHORE = asyncio.Semaphore(workers)
     return _SEMAPHORE
 

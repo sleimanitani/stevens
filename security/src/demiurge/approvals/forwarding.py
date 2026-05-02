@@ -50,7 +50,7 @@ class ForwardingConfig:
 
 
 def _default_config_path() -> Path:
-    env = os.environ.get("STEVENS_APPROVAL_FORWARDING")
+    env = os.environ.get("DEMIURGE_APPROVAL_FORWARDING")
     if env:
         return Path(env)
     return Path(__file__).resolve().parents[2] / "policy" / "approval_forwarding.yaml"

@@ -1,4 +1,4 @@
-"""Audit log tailer — `stevens audit tail [-f]`.
+"""Audit log tailer — `demiurge audit tail [-f]`.
 
 Reads the JSONL audit log written by ``audit.AuditWriter`` and prints
 either a one-shot last-N lines or a follow stream (``-f``).

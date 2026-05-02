@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 
 
 def _load_passphrase() -> bytes:
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         return env.encode("utf-8")
     return getpass.getpass("sealed-store passphrase: ").encode("utf-8")
@@ -52,7 +52,7 @@ def _open_store():
     from demiurge.sealed_store import SealedStore
 
     root = Path(
-        os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")
+        os.environ.get("DEMIURGE_SECURITY_SECRETS", "/var/lib/demiurge/secrets")
     )
     return SealedStore.unlock(root, _load_passphrase())
 

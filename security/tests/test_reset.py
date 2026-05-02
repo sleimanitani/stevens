@@ -20,8 +20,8 @@ from demiurge.reset import (
 
 
 def test_build_plan_default_includes_everything(monkeypatch):
-    monkeypatch.delenv("STEVENS_SECURITY_SECRETS", raising=False)
-    monkeypatch.delenv("STEVENS_SECURITY_AUDIT_DIR", raising=False)
+    monkeypatch.delenv("DEMIURGE_SECURITY_SECRETS", raising=False)
+    monkeypatch.delenv("DEMIURGE_SECURITY_AUDIT_DIR", raising=False)
     plan = build_plan()
     assert plan.sealed_store_dir is not None
     assert plan.audit_dir is not None
@@ -55,8 +55,8 @@ def test_build_plan_partial_keep():
 
 
 def test_build_plan_uses_env_overrides(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("STEVENS_SECURITY_SECRETS", str(tmp_path / "vault"))
-    monkeypatch.setenv("STEVENS_SECURITY_AUDIT_DIR", str(tmp_path / "audit"))
+    monkeypatch.setenv("DEMIURGE_SECURITY_SECRETS", str(tmp_path / "vault"))
+    monkeypatch.setenv("DEMIURGE_SECURITY_AUDIT_DIR", str(tmp_path / "audit"))
     plan = build_plan()
     assert plan.sealed_store_dir == tmp_path / "vault"
     assert plan.audit_dir == tmp_path / "audit"
@@ -66,7 +66,7 @@ def test_build_plan_uses_env_overrides(monkeypatch, tmp_path: Path):
 
 
 def test_render_includes_all_sections(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("STEVENS_SECURITY_SECRETS", str(tmp_path / "v"))
+    monkeypatch.setenv("DEMIURGE_SECURITY_SECRETS", str(tmp_path / "v"))
     rendered = build_plan().render()
     assert "sealed store dir" in rendered
     assert "audit log dir" in rendered
@@ -161,5 +161,5 @@ async def test_execute_postgres_failure_doesnt_crash(monkeypatch):
 
 def test_post_wipe_next_steps_includes_secrets_init():
     s = post_wipe_next_steps()
-    assert "stevens secrets init" in s
-    assert "stevens onboard gmail" in s
+    assert "demiurge secrets init" in s
+    assert "demiurge onboard gmail" in s

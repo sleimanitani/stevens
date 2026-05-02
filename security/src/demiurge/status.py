@@ -1,8 +1,8 @@
-"""Lightweight status — `stevens status`.
+"""Lightweight status — `demiurge status`.
 
 Always returns 0. Just a glance: sealed-store state, Enkidu running or
 not, registered agents, last 5 audit lines. For "is anything wrong?" use
-``stevens doctor`` instead.
+``demiurge doctor`` instead.
 """
 
 from __future__ import annotations

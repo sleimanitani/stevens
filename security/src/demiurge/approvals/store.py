@@ -4,7 +4,7 @@ In production this is Postgres-backed (queries against ``approval_requests``
 and ``standing_approvals``). In tests it's the in-memory backend
 ``InMemoryApprovalStore`` so the CLI logic can be exercised without a DB.
 
-The ``stevens approval`` CLI subcommands take an ``ApprovalStore`` instance,
+The ``demiurge approval`` CLI subcommands take an ``ApprovalStore`` instance,
 which is constructed at boot (Postgres) or in tests (in-memory).
 """
 

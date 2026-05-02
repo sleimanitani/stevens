@@ -112,12 +112,12 @@ async def test_brave_clamps_max_results():
 
 
 def test_select_backend_default(monkeypatch):
-    monkeypatch.delenv("STEVENS_SEARCH_BACKEND", raising=False)
+    monkeypatch.delenv("DEMIURGE_SEARCH_BACKEND", raising=False)
     assert select_backend_name() == "brave"
 
 
 def test_select_backend_env_override(monkeypatch):
-    monkeypatch.setenv("STEVENS_SEARCH_BACKEND", "tavily")
+    monkeypatch.setenv("DEMIURGE_SEARCH_BACKEND", "tavily")
     assert select_backend_name() == "tavily"
 
 

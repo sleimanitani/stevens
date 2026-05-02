@@ -1,4 +1,4 @@
-"""``stevens bootstrap`` — wire up first-time setup in one command.
+"""``demiurge bootstrap`` — wire up first-time setup in one command.
 
 v0.10 step 4. The orchestrator that composes the building blocks shipped
 in steps 1–3:
@@ -18,11 +18,11 @@ Top-level flow:
    instructions and exit with rc=1. The operator runs the printed sudo
    block themselves; bootstrap never escalates.
 3. Otherwise: idempotently provision the assistant role + DB + ``vector``
-   extension, apply migrations, write ``~/.config/stevens/env``,
+   extension, apply migrations, write ``~/.config/demiurge/env``,
    generate/refresh systemd user units, and request a daemon-reload.
 4. Print final state + the one or two follow-up commands the operator
-   still needs to run themselves (typically ``stevens secrets init`` and
-   ``stevens channels install <name>``).
+   still needs to run themselves (typically ``demiurge secrets init`` and
+   ``demiurge channels install <name>``).
 
 ``--dry-run`` (default mode is *not* dry — bootstrap is opt-out, not
 opt-in) skips all mutating calls and just prints what would happen.
@@ -57,7 +57,7 @@ class PreflightResult:
 def _in_docker_group(user: Optional[str] = None) -> bool:
     """Thin re-export — kept for back-compat with tests.
 
-    The detector lives in ``bootstrap.preflight`` so ``stevens doctor`` can
+    The detector lives in ``bootstrap.preflight`` so ``demiurge doctor`` can
     use it too (with warning policy instead of hard-fail).
     """
     return _preflight.in_docker_group(user)
@@ -117,7 +117,7 @@ def run_bootstrap(*, dry_run: bool = False, repo_root: Optional[Path] = None) ->
     rc=1 — operator action required (sudo block printed) — re-run after.
     rc=2 — preflight failure or hard error.
     """
-    print("Stevens bootstrap — preflight checks.")
+    print("Demiurge bootstrap — preflight checks.")
     pre = preflight()
     for w in pre.warnings:
         print(f"  ! {w}")
@@ -141,7 +141,7 @@ def run_bootstrap(*, dry_run: bool = False, repo_root: Optional[Path] = None) ->
             print(f"\n# {note}")
         print(
             "\nbootstrap paused: run the block above, then re-run "
-            "`stevens bootstrap`."
+            "`demiurge bootstrap`."
         )
         return 1
 
@@ -203,16 +203,16 @@ def run_bootstrap(*, dry_run: bool = False, repo_root: Optional[Path] = None) ->
     print()
     print("--- next steps ---")
     print(
-        "  1. `stevens secrets init`  — create the sealed store + set the "
+        "  1. `demiurge secrets init`  — create the sealed store + set the "
         "passphrase (one-time)."
     )
     print(
-        "  2. `stevens channels install <name>`  — onboard a channel "
+        "  2. `demiurge channels install <name>`  — onboard a channel "
         "(lands in v0.11; until then use the per-channel runbooks under "
         "`docs/runbooks/`)."
     )
     print(
-        "  3. `systemctl --user start stevens-security`  — bring up Enkidu "
+        "  3. `systemctl --user start demiurge-security`  — bring up Enkidu "
         "(once the sealed store exists)."
     )
     return 0

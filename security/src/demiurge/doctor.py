@@ -1,4 +1,4 @@
-"""Diagnostic — `stevens doctor`.
+"""Diagnostic — `demiurge doctor`.
 
 Walks a checklist that is cheap to run and tells the operator the
 specific next thing to fix when something is wrong. Returns non-zero
@@ -11,7 +11,7 @@ Checks (independent — one failure doesn't short-circuit the rest):
 3. Enkidu (Security Agent) is running: UDS socket exists and ``ping``
    round-trips. If the service isn't running, that's a *warning*, not a
    failure — many operations don't need it live.
-4. Each agent in agents.yaml has a key file at ``~/.config/stevens/agents/<name>.key``
+4. Each agent in agents.yaml has a key file at ``~/.config/demiurge/agents/<name>.key``
    if a corresponding ``.env`` exists, and the key file is mode 0600.
 5. Each capability allow rule in capabilities.yaml refers to a registered
    agent (otherwise the rule is dead).
@@ -63,7 +63,7 @@ def _check_sealed_store_exists(secrets_root: Path) -> Check:
         name="sealed-store-exists",
         ok=False,
         message=f"no sealed store at {secrets_root}",
-        remediation="run: stevens secrets init",
+        remediation="run: demiurge secrets init",
     )
 
 
@@ -71,7 +71,7 @@ def _check_sealed_store_unlocks(secrets_root: Path) -> Check:
     """Try to unlock with whatever passphrase source is available.
 
     We try, in order:
-    - ``$STEVENS_PASSPHRASE`` env
+    - ``$DEMIURGE_PASSPHRASE`` env
     - OS keyring (if a backend is set)
     No prompt — doctor should be quiet.
     """
@@ -83,7 +83,7 @@ def _check_sealed_store_unlocks(secrets_root: Path) -> Check:
             info=True,
         )
     pp: Optional[bytes] = None
-    env = os.environ.get("STEVENS_PASSPHRASE")
+    env = os.environ.get("DEMIURGE_PASSPHRASE")
     if env is not None:
         pp = env.encode("utf-8")
     if pp is None:
@@ -95,7 +95,7 @@ def _check_sealed_store_unlocks(secrets_root: Path) -> Check:
             name="sealed-store-unlocks",
             ok=False,
             message="no passphrase available (env empty, no keyring entry)",
-            remediation="run: stevens passphrase remember  (or set STEVENS_PASSPHRASE)",
+            remediation="run: demiurge passphrase remember  (or set DEMIURGE_PASSPHRASE)",
             info=True,
         )
     try:
@@ -121,8 +121,8 @@ def _check_socket_running(socket_path: str) -> Check:
             message=f"no socket at {socket_path}",
             remediation=(
                 "start the security service: "
-                "`systemctl --user start stevens-security`  "
-                "(installed via `stevens bootstrap`)"
+                "`systemctl --user start demiurge-security`  "
+                "(installed via `demiurge bootstrap`)"
             ),
             info=True,
         )
@@ -143,7 +143,7 @@ def _check_agent_key_files(
                 name="agent-keys",
                 ok=False,
                 message=f"no agents.yaml at {agents_yaml}",
-                remediation="provision an agent: stevens agent provision <name>",
+                remediation="provision an agent: demiurge agent provision <name>",
                 info=True,
             )
         )
@@ -174,7 +174,7 @@ def _check_agent_key_files(
         key_path: Optional[Path] = None
         for line in env_path.read_text().splitlines():
             line = line.strip()
-            if line.startswith("STEVENS_PRIVATE_KEY_PATH="):
+            if line.startswith("DEMIURGE_PRIVATE_KEY_PATH="):
                 key_path = Path(line.split("=", 1)[1])
                 break
         if key_path is None:
@@ -182,8 +182,8 @@ def _check_agent_key_files(
                 Check(
                     name=f"agent-key:{name}",
                     ok=False,
-                    message=f"{name}: env profile has no STEVENS_PRIVATE_KEY_PATH",
-                    remediation=f"re-provision: stevens agent provision {name} --force",
+                    message=f"{name}: env profile has no DEMIURGE_PRIVATE_KEY_PATH",
+                    remediation=f"re-provision: demiurge agent provision {name} --force",
                 )
             )
             continue
@@ -193,7 +193,7 @@ def _check_agent_key_files(
                     name=f"agent-key:{name}",
                     ok=False,
                     message=f"{name}: key file missing at {key_path}",
-                    remediation=f"re-provision: stevens agent provision {name} --force",
+                    remediation=f"re-provision: demiurge agent provision {name} --force",
                 )
             )
             continue

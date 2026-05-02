@@ -8,12 +8,18 @@ that matches what you want to do.
 If you're starting from a clean machine (or just ran `stevens reset`):
 
 ```bash
-# 1. one-time machine prep
+# 1. one-time machine prep — bootstrap detects what's needed and prints
+#    the one sudo block to run yourself; bootstrap never escalates.
+uv run stevens bootstrap                   # detect; prints sudo block if needed
+# (run the printed sudo block — typically `apt-get install postgresql-16
+#  postgresql-16-pgvector` + `sudo -u postgres createuser -s $USER`)
+uv run stevens bootstrap                   # re-run to finish (idempotent)
+sudo loginctl enable-linger $USER          # services start at boot
+
+# (optional) tools needed by some channels:
 gcloud auth login                          # only if you'll onboard Google channels
 uv sync --extra janus                      # only if you'll use Janus (Playwright)
 uv run playwright install chromium         # only if you'll use Janus
-docker compose up -d postgres              # bring DB up
-bash scripts/db_migrate.sh                 # apply migrations
 
 # 2. one-time Stevens prep
 uv run stevens secrets init                # set passphrase for sealed store

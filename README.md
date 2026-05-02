@@ -18,13 +18,17 @@ Events flow: channels publish to the bus (Postgres table in v0.1, NATS later), a
 
 ## Prerequisites
 
-- Docker + Docker Compose
-- Python 3.12 with `uv` installed
-- Node.js 22+ (for WhatsApp adapter)
-- Ollama running on the host (not in Docker) with `qwen3:30b-a3b-instruct` pulled
-- A Google Cloud project with Gmail API + Pub/Sub enabled
-- Tailscale with Funnel enabled on this machine
-- An empty `.env` file (copy from `.env.example`)
+- Linux (Debian/Ubuntu primary target; macOS best-effort). Windows: see `dev/`.
+- Python 3.10+ with `uv` installed (https://docs.astral.sh/uv/)
+- Ollama running on the host with `qwen3:30b-a3b-instruct` pulled
+- A Google Cloud project with Gmail API + Pub/Sub enabled (for Gmail channel)
+- Tailscale with Funnel enabled (for inbound webhooks)
+
+> **Not a prerequisite anymore:** Docker. Stevens v0.10+ installs natively
+> via `stevens bootstrap` (native Postgres + systemd user units). Docker is
+> deliberately *not* used — `docker` group membership is functionally
+> passwordless root (see STEVENS.md §2 Principle 14). The legacy
+> `docker compose` path lives under `dev/` for developers who want it.
 
 ## First-time setup
 
@@ -32,25 +36,35 @@ Events flow: channels publish to the bus (Postgres table in v0.1, NATS later), a
 # 1. Install Python deps via uv workspace
 uv sync
 
-# 2. Install Node deps for WhatsApp adapter
-cd channels/whatsapp && npm install && cd ../..
+# 2. Run the bootstrap. It detects what's missing on this host and prints
+#    the one sudo block you need to run yourself. (bootstrap never escalates.)
+uv run stevens bootstrap
 
-# 3. Start infrastructure (postgres + langfuse)
-docker compose up -d postgres langfuse-db langfuse
+# 3. Run the printed sudo block. On a fresh Debian/Ubuntu box it looks like:
+#       sudo apt-get install -y postgresql-16 postgresql-16-pgvector
+#       sudo -u postgres createuser -s $USER
+#    macOS uses `brew install postgresql@16 pgvector`.
 
-# 4. Apply migrations
-docker compose exec -T postgres psql -U assistant -d assistant < resources/migrations/001_init.sql
+# 4. Re-run bootstrap to finish setup (creates assistant role+DB, applies
+#    migrations, writes ~/.config/stevens/env, generates systemd user units).
+uv run stevens bootstrap
 
-# 5. Pull the local model (on host, not in Docker)
+# 5. One-time per machine: enable systemd user lingering so services start at boot.
+sudo loginctl enable-linger $USER
+
+# 6. Initialize the sealed store (you'll be prompted for a passphrase).
+uv run stevens secrets init
+
+# 7. Bring up Enkidu (the Security Agent).
+systemctl --user start stevens-security
+
+# 8. Pull the local model (on host).
 ollama pull qwen3:30b-a3b-instruct
-
-# 6. Verify Ollama is reachable
-curl http://localhost:11434/api/tags
-
-# 7. Expose Gmail adapter via Tailscale Funnel (once it's running)
-tailscale funnel --bg 8080
-# Note the https URL it prints — this goes in Google Pub/Sub config
 ```
+
+After this, onboard channels — see `docs/runbooks/` for per-channel guides
+(`gmail.md`, `calendar.md`, `whatsapp-cloud.md`, `signal.md`). In v0.11
+those become `stevens channels install <name>`.
 
 ## Onboarding accounts
 
@@ -89,16 +103,30 @@ npm run add-account -- --id wa.uae --name "UAE number"
 
 ## Running
 
+After `stevens bootstrap`, every Stevens service runs as a systemd user
+unit. Manage them like any other systemd service — no sudo needed:
+
 ```bash
-docker compose up -d
+# Start individual services
+systemctl --user start stevens-security
+systemctl --user start stevens-gmail-adapter
+systemctl --user start stevens-agents
+
+# Status / logs
+systemctl --user status stevens-security
+journalctl --user -u stevens-agents -f
+
+# Stop / restart
+systemctl --user restart stevens-gmail-adapter
 ```
 
-This starts: postgres, langfuse, langfuse-db, gmail-adapter, whatsapp-adapter, agents.
+The catalog of available units lives in
+`security/src/stevens_security/bootstrap/systemd.py` (`DEFAULT_SERVICES`).
 
-For development, run the agents process locally instead of in Docker for faster iteration:
+For development you can run the agents runtime directly instead of through
+the unit, for faster iteration:
 
 ```bash
-docker compose up -d postgres langfuse langfuse-db gmail-adapter whatsapp-adapter
 uv run python -m agents.runtime
 ```
 
@@ -127,18 +155,24 @@ Langfuse runs at `http://localhost:3000`. Every agent invocation, every LLM call
 
 ```
 assistant/
-├── compose.yaml            # all services
 ├── pyproject.toml          # uv workspace root
 ├── .env.example
 ├── shared/                 # shared Python package (schemas, bus, db)
+├── security/               # Enkidu (Security Agent) + bootstrap subpackage
 ├── channels/
 │   ├── gmail/              # Python + FastAPI
-│   └── whatsapp/           # Node.js + Baileys
+│   ├── calendar/           # Python + FastAPI
+│   ├── whatsapp-cloud/     # Python + FastAPI
+│   ├── signal/             # Python adapter for signal-cli-rest-api
+│   └── whatsapp/           # Node.js + Baileys (legacy; moves to v0.11 plugin)
 ├── agents/                 # Python agent runtime + agent definitions
 ├── resources/
 │   └── migrations/         # SQL schema
+├── dev/
+│   └── compose.yaml        # legacy docker-compose path (developer-only)
 └── docs/
-    └── prd.docx            # the full PRD + TRD
+    ├── prd.docx            # the full PRD + TRD
+    └── runbooks/           # per-channel onboarding
 ```
 
 ## Non-goals (v0.1)

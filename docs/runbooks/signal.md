@@ -1,5 +1,14 @@
 # Runbook — Signal
 
+> **v0.10 transitional note:** the `signal-cli-rest-api` daemon below still
+> runs in docker. The Signal-side native install (apt-installable
+> `signal-cli` daemon under a systemd user unit) lands in a follow-up step
+> after the v0.10 acceptance gate. Until then, every `docker compose ...`
+> command below is run *from the `dev/` directory* — i.e. `cd dev/`
+> first, then the `docker compose` command. The rest of Stevens (Postgres,
+> Enkidu, the signal-adapter itself) does not need docker —
+> `stevens bootstrap` installs and runs them natively.
+
 End state: each Signal phone you onboard publishes inbound message events to the bus (DMs and groups), and agents can send replies. Stevens never touches Signal's encryption directly — the `signal-cli-rest-api` daemon owns the linked Signal session.
 
 ## Goal
@@ -19,7 +28,7 @@ End state: each Signal phone you onboard publishes inbound message events to the
 
 ```bash
 # 1. bring the signal-cli-rest-api daemon up
-docker compose up -d signal-cli-rest-api
+(cd dev/; docker compose) up -d signal-cli-rest-api
 
 # 2. onboard the phone
 uv run python -m signal_adapter.add_account \
@@ -38,12 +47,12 @@ uv run python -m signal_adapter.add_account \
 
 # 4. start the signal-adapter container with this account's env vars
 #    (one container per phone — the adapter is single-account today):
-docker compose run --rm \
+(cd dev/; docker compose) run --rm \
   -e SIGNAL_ACCOUNT_ID=signal.personal \
   -e SIGNAL_PHONE=+15555551234 \
   signal-adapter
 # Or update compose.yaml to set these env vars on the signal-adapter
-# service definition and `docker compose up -d signal-adapter`.
+# service definition and `(cd dev/; docker compose) up -d signal-adapter`.
 ```
 
 ## Verify
@@ -64,7 +73,7 @@ Each phone needs its own linked-device session in `signal-cli-rest-api`. Re-run 
 
 ## Common issues
 
-- **"Daemon not reachable at http://localhost:8084."** Container not up, or compose port binding mismatch. `docker compose ps signal-cli-rest-api` should show it running. The daemon listens on port 8080 internally; compose maps it to host 8084.
+- **"Daemon not reachable at http://localhost:8084."** Container not up, or compose port binding mismatch. `(cd dev/; docker compose) ps signal-cli-rest-api` should show it running. The daemon listens on port 8080 internally; compose maps it to host 8084.
 - **"QR code not scanning."** PNG might be too small for your phone's camera. Open it on a larger display (laptop screen). Or open the daemon URL directly in a browser: `http://localhost:8084/v1/qrcodelink/Stevens?number=+15555551234` — it returns the same PNG.
 - **"Linked device but no messages arriving."** The adapter polls every 2s by default; first message can take that long. Check `docker logs signal-adapter` for errors. The daemon URL the adapter uses is the docker-internal `http://signal-cli-rest-api:8080` (NOT `localhost:8084` — that's only for your browser).
 - **"Adapter restarted, lost the linked session."** The daemon's session lives in a Docker volume (`signal-cli-data`). It survives adapter restarts. If the daemon container is recreated without the volume, the link is lost — re-run step 2.

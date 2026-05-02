@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from stevens_security.framing import (
+from demiurge.framing import (
     MAX_PAYLOAD_BYTES,
     FramingError,
     decode,

@@ -53,7 +53,7 @@ def _load_passphrase() -> bytes:
 def _open_store():
     # Local import so non-CLI imports of this module don't pull in the whole
     # security package.
-    from stevens_security.sealed_store import SealedStore
+    from demiurge.sealed_store import SealedStore
 
     root = Path(
         os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")

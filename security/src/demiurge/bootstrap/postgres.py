@@ -499,7 +499,7 @@ def _print_lines(lines: Iterable[str]) -> None:
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
-    """``python -m stevens_security.bootstrap.postgres`` entrypoint.
+    """``python -m demiurge.bootstrap.postgres`` entrypoint.
 
     Modes:
     - default: detect + print state + print install_instructions if needed.
@@ -510,7 +510,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(
-        prog="stevens_security.bootstrap.postgres",
+        prog="demiurge.bootstrap.postgres",
         description="Detect / provision native Postgres for Stevens.",
     )
     p.add_argument(

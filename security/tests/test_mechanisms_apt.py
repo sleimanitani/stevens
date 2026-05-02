@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from stevens_security.mechanisms import get
-from stevens_security.mechanisms.base import ExecResult, ValidationError
+from demiurge.mechanisms import get
+from demiurge.mechanisms.base import ExecResult, ValidationError
 
 
 @pytest.fixture
@@ -163,7 +163,7 @@ def test_validate_rollback_re_runs(apt):
 
 
 def test_unknown_mechanism_lookup_raises():
-    from stevens_security.mechanisms import get
+    from demiurge.mechanisms import get
 
     with pytest.raises(KeyError, match="unknown mechanism"):
         get("conda")

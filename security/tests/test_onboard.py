@@ -1,4 +1,4 @@
-"""Tests for stevens_security.onboard — channel onboarding helpers."""
+"""Tests for demiurge.onboard — channel onboarding helpers."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from stevens_security.onboard import (
+from demiurge.onboard import (
     OAuthClient,
     OnboardError,
     add_account_argv,
@@ -16,7 +16,7 @@ from stevens_security.onboard import (
     parse_google_client_json,
     shred_file,
 )
-from stevens_security.sealed_store import SealedStore, initialize_store
+from demiurge.sealed_store import SealedStore, initialize_store
 
 
 # --- parse_google_client_json ---

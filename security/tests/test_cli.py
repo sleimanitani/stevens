@@ -7,7 +7,7 @@ import os
 import nacl.signing
 import pytest
 
-from stevens_security.cli import main as cli_main
+from demiurge.cli import main as cli_main
 
 
 PASSPHRASE = "correct horse battery staple"

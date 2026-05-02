@@ -12,18 +12,18 @@ from typing import List
 import httpx
 import pytest
 
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.capabilities.whatsapp_cloud import (  # noqa: F401
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.capabilities.whatsapp_cloud import (  # noqa: F401
     wac_get_media_url,
     wac_mark_read,
     wac_send_template,
     wac_send_text,
     wac_verify_webhook_signature,
 )
-from stevens_security.context import CapabilityContext
-from stevens_security.outbound.client import OutboundClient, OutboundError
-from stevens_security.outbound.whatsapp_cloud import WhatsAppCloudClient
-from stevens_security.sealed_store import initialize_store
+from demiurge.context import CapabilityContext
+from demiurge.outbound.client import OutboundClient, OutboundError
+from demiurge.outbound.whatsapp_cloud import WhatsAppCloudClient
+from demiurge.sealed_store import initialize_store
 
 
 PASSPHRASE = b"test-passphrase"

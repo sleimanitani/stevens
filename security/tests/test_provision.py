@@ -1,4 +1,4 @@
-"""Tests for stevens_security.provision — agent provisioning."""
+"""Tests for demiurge.provision — agent provisioning."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from stevens_security.provision import (
+from demiurge.provision import (
     ProvisionError,
     default_agents_dir,
     provision_agent,

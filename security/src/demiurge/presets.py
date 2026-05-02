@@ -46,7 +46,7 @@ class Preset:
 def _presets_dir() -> Path:
     """Default presets directory at ``security/policy/presets/``.
 
-    Resolution: walks up from this file (``…/src/stevens_security/presets.py``)
+    Resolution: walks up from this file (``…/src/demiurge/presets.py``)
     to the ``security/`` package root, then ``policy/presets``. Override
     with ``$STEVENS_SECURITY_PRESETS`` for tests.
     """

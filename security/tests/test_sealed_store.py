@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from stevens_security.sealed_store import (
+from demiurge.sealed_store import (
     AlreadyExistsError,
     NotFoundError,
     SealedStore,

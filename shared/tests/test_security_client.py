@@ -1,6 +1,6 @@
 """Tests for shared.security_client.
 
-Wires a real Security Agent server (from stevens_security) with a minimal
+Wires a real Security Agent server (from demiurge) with a minimal
 policy + registry, then exercises the client against it over a real UDS.
 """
 
@@ -18,13 +18,13 @@ from shared.security_client import (
     SecurityClient,
     TransportError,
 )
-from stevens_security.audit import AuditWriter
-from stevens_security.capabilities.ping import ping
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.dispatch import build_dispatcher
-from stevens_security.identity import NonceCache, RegisteredAgent
-from stevens_security.policy import AgentPolicy, CapabilityRule, Policy
-from stevens_security.server import start_server
+from demiurge.audit import AuditWriter
+from demiurge.capabilities.ping import ping
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.dispatch import build_dispatcher
+from demiurge.identity import NonceCache, RegisteredAgent
+from demiurge.policy import AgentPolicy, CapabilityRule, Policy
+from demiurge.server import start_server
 
 
 async def _start_ping_server(tmp_path, caller_name: str, allow_ping: bool = True):

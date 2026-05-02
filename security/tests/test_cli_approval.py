@@ -17,14 +17,14 @@ from typing import List
 
 import pytest
 
-from stevens_security.approvals.queue import ApprovalRequest
-from stevens_security.approvals.store import (
+from demiurge.approvals.queue import ApprovalRequest
+from demiurge.approvals.store import (
     InMemoryApprovalStore,
     StandingGrant,
     StoreError,
     parse_duration,
 )
-from stevens_security.cli_approvals import (
+from demiurge.cli_approvals import (
     cmd_approval_approve,
     cmd_approval_list,
     cmd_approval_reject,
@@ -35,7 +35,7 @@ from stevens_security.cli_approvals import (
     cmd_dep_ensure,
     cmd_dep_list,
 )
-from stevens_security.system_runtime import InMemoryInventory, InventoryRow
+from demiurge.system_runtime import InMemoryInventory, InventoryRow
 
 
 def _capture(coro_fn, *args, **kwargs):

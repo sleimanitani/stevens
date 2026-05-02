@@ -5,7 +5,7 @@ Drop-in replacement for the old ``scripts/db_migrate.sh`` shell-out to
 (every migration uses ``IF NOT EXISTS`` guards), no host ``psql`` required.
 
 Usage:
-    DATABASE_URL=postgresql:///assistant uv run python -m stevens_security.bootstrap.migrate
+    DATABASE_URL=postgresql:///assistant uv run python -m demiurge.bootstrap.migrate
     # or, equivalently after v0.10:
     DATABASE_URL=postgresql:///assistant bash scripts/db_migrate.sh
 """

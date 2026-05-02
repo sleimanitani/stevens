@@ -6,7 +6,7 @@ result (thread metadata, the draft id, the applied label) — never a
 token, client id, or client secret.
 
 The handlers expect ``context.outbound.gmail`` to be a
-:class:`stevens_security.outbound.gmail.GmailClient`. If it isn't, the
+:class:`demiurge.outbound.gmail.GmailClient`. If it isn't, the
 capability fails cleanly rather than blowing up cryptically.
 
 Naming: ``account_id`` is a clear-text routing label. Everything else

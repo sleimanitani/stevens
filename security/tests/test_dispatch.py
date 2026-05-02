@@ -13,12 +13,12 @@ import time
 import nacl.signing
 import pytest
 
-from stevens_security.audit import AuditWriter
-from stevens_security.canonical import canonical_encode
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.dispatch import build_dispatcher
-from stevens_security.identity import NonceCache, RegisteredAgent
-from stevens_security.policy import (
+from demiurge.audit import AuditWriter
+from demiurge.canonical import canonical_encode
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.dispatch import build_dispatcher
+from demiurge.identity import NonceCache, RegisteredAgent
+from demiurge.policy import (
     AgentPolicy,
     CapabilityRule,
     Policy,

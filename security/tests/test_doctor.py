@@ -1,4 +1,4 @@
-"""Tests for stevens_security.doctor."""
+"""Tests for demiurge.doctor."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from stevens_security import doctor
-from stevens_security.provision import provision_agent
-from stevens_security.sealed_store import initialize_store
+from demiurge import doctor
+from demiurge.provision import provision_agent
+from demiurge.sealed_store import initialize_store
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ def test_doctor_detects_orphan_policy_entry(workspace, monkeypatch) -> None:
 
 def test_doctor_warns_on_docker_group_membership(workspace, monkeypatch) -> None:
     """v0.10 step 5: doctor flags docker-group membership as a warning."""
-    from stevens_security.bootstrap import preflight as bp
+    from demiurge.bootstrap import preflight as bp
 
     monkeypatch.setattr(bp, "in_docker_group", lambda user=None: True)
     report = _run(workspace)
@@ -114,7 +114,7 @@ def test_doctor_warns_on_docker_group_membership(workspace, monkeypatch) -> None
 
 
 def test_doctor_passes_when_not_in_docker_group(workspace, monkeypatch) -> None:
-    from stevens_security.bootstrap import preflight as bp
+    from demiurge.bootstrap import preflight as bp
 
     monkeypatch.setattr(bp, "in_docker_group", lambda user=None: False)
     report = _run(workspace)

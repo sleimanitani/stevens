@@ -12,7 +12,7 @@ prompt." Each capability is declared here with:
   it's a routing label, not a secret).
 
 The module ships a ``default_registry`` singleton that real capability
-modules register into on import (see :mod:`stevens_security.capabilities.ping`).
+modules register into on import (see :mod:`demiurge.capabilities.ping`).
 Tests can also create isolated ``CapabilityRegistry`` instances for
 parallel/independent test runs.
 

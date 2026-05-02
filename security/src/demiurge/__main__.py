@@ -1,6 +1,6 @@
 """Security Agent entrypoint.
 
-Run with ``uv run python -m stevens_security`` (dev) or via the ``security``
+Run with ``uv run python -m demiurge`` (dev) or via the ``security``
 service in compose (prod).
 
 Configuration comes from environment variables:
@@ -59,7 +59,7 @@ async def _amain() -> int:
         level=os.environ.get("STEVENS_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
-    log = logging.getLogger("stevens_security")
+    log = logging.getLogger("demiurge")
     log.info("Enkidu — Stevens Security Agent (sole broker for secrets)")
 
     socket_path = os.environ.get(

@@ -8,8 +8,8 @@ import nacl.signing
 import pytest
 import yaml
 
-from stevens_security.canonical import canonical_encode
-from stevens_security.identity import (
+from demiurge.canonical import canonical_encode
+from demiurge.identity import (
     CLOCK_SKEW_SECONDS,
     AuthError,
     NonceCache,

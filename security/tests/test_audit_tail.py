@@ -1,4 +1,4 @@
-"""Tests for stevens_security.audit_tail."""
+"""Tests for demiurge.audit_tail."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from stevens_security import audit_tail
+from demiurge import audit_tail
 
 
 def _write_log(path: Path, records: list[dict]) -> None:

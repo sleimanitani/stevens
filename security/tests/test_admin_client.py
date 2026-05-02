@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from stevens_security.admin_client import AdminClient
+from demiurge.admin_client import AdminClient
 
 
 def test_try_create_no_key_returns_none(monkeypatch, tmp_path: Path):

@@ -3,7 +3,7 @@
 import pytest
 import yaml
 
-from stevens_security.policy import (
+from demiurge.policy import (
     AgentPolicy,
     CapabilityRule,
     Policy,

@@ -1,4 +1,4 @@
-"""Tests for stevens_security.bootstrap.systemd — v0.10 step 3."""
+"""Tests for demiurge.bootstrap.systemd — v0.10 step 3."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from stevens_security.bootstrap import systemd as bs
+from demiurge.bootstrap import systemd as bs
 
 
 # ----------------------------- catalog ------------------------------------

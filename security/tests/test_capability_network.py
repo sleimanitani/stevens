@@ -7,11 +7,11 @@ from typing import Any, Dict, List, Optional
 import httpx
 import pytest
 
-from stevens_security.capabilities import network as network_caps  # noqa: F401 — registers
-from stevens_security.capabilities.network import WebState
-from stevens_security.capabilities.registry import default_registry
-from stevens_security.context import CapabilityContext
-from stevens_security.outbound.web_state import DomainRateLimiter, TTLCache
+from demiurge.capabilities import network as network_caps  # noqa: F401 — registers
+from demiurge.capabilities.network import WebState
+from demiurge.capabilities.registry import default_registry
+from demiurge.context import CapabilityContext
+from demiurge.outbound.web_state import DomainRateLimiter, TTLCache
 
 from shared.outbound.web import WebClient
 

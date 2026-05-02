@@ -1,4 +1,4 @@
-"""Tests for stevens_security.bootstrap.preflight — v0.10 step 5.
+"""Tests for demiurge.bootstrap.preflight — v0.10 step 5.
 
 Covers the shared docker-group detector and the back-compat re-export
 on cli_bootstrap.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from stevens_security.bootstrap import preflight
+from demiurge.bootstrap import preflight
 
 
 def test_in_docker_group_member(monkeypatch):
@@ -70,7 +70,7 @@ def test_docker_group_removal_hint():
 
 def test_cli_bootstrap_back_compat_export(monkeypatch):
     """`cli_bootstrap._in_docker_group` still works (delegates to preflight)."""
-    from stevens_security.bootstrap import cli_bootstrap
+    from demiurge.bootstrap import cli_bootstrap
 
     fake = MagicMock(gr_mem=["zoe"])
     monkeypatch.setattr(preflight.grp, "getgrnam", lambda name: fake)

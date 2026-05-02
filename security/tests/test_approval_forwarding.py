@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from stevens_security.approvals.forwarding import (
+from demiurge.approvals.forwarding import (
     ForwardingConfig,
     ForwardingConfigError,
     ForwardingRule,
@@ -15,7 +15,7 @@ from stevens_security.approvals.forwarding import (
     load_config,
     matching_targets,
 )
-from stevens_security.approvals.queue import ApprovalRequest
+from demiurge.approvals.queue import ApprovalRequest
 
 
 def _req(caller="installer", capability="system.execute_privileged") -> ApprovalRequest:

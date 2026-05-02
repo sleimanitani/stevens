@@ -1,4 +1,4 @@
-"""Tests for stevens_security.bootstrap.migrate — psql-free migration runner."""
+"""Tests for demiurge.bootstrap.migrate — psql-free migration runner."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from stevens_security.bootstrap.migrate import (
+from demiurge.bootstrap.migrate import (
     _resolve_migrations_dir,
     apply_migrations,
     main,

@@ -1,7 +1,7 @@
 """Stevens admin CLI — sealed-store operations and agent registration.
 
 Invoked as ``uv run stevens`` (via the ``[project.scripts]`` entry point in
-``security/pyproject.toml``) or ``python -m stevens_security.cli``.
+``security/pyproject.toml``) or ``python -m demiurge.cli``.
 
 Subcommands::
 

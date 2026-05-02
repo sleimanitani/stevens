@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from stevens_security.audit import AuditEntry, AuditWriter, hash_param
+from demiurge.audit import AuditEntry, AuditWriter, hash_param
 
 
 def make_entry(**kwargs) -> AuditEntry:

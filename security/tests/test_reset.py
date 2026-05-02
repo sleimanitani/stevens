@@ -1,4 +1,4 @@
-"""Tests for stevens_security.reset — local-state wipe for fresh-install testing."""
+"""Tests for demiurge.reset — local-state wipe for fresh-install testing."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from stevens_security.reset import (
+from demiurge.reset import (
     ResetPlan,
     build_plan,
     execute_plan,
@@ -132,7 +132,7 @@ async def test_execute_clears_keyring(monkeypatch):
     def fake_clear():
         cleared["called"] = True
 
-    import stevens_security.keyring_passphrase as kp
+    import demiurge.keyring_passphrase as kp
 
     monkeypatch.setattr(kp, "clear", fake_clear)
     plan = ResetPlan(keyring_entry=True, postgres_tables=[])

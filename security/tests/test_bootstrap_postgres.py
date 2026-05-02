@@ -1,4 +1,4 @@
-"""Tests for stevens_security.bootstrap.postgres — v0.10 step 2."""
+"""Tests for demiurge.bootstrap.postgres — v0.10 step 2."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from stevens_security.bootstrap import postgres as bp
+from demiurge.bootstrap import postgres as bp
 
 
 # ----------------------------- platform ----------------------------------

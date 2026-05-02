@@ -13,11 +13,11 @@ members = [
     "agents",
     "assistant",
     "calendar-adapter",
+    "demiurge",
     "gmail-adapter",
     "shared",
     "signal-adapter",
     "skills",
-    "stevens-security",
     "whatsapp-cloud-adapter",
 ]
 
@@ -605,6 +605,44 @@ sdist = { url = "https://files.pythonhosted.org/packages/64/a4/f71d9cf3a5ac257c9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c3/be/d0d44e092656fe7a06b55e6103cbce807cdbdee17884a5367c68c9860853/dataclasses_json-0.6.7-py3-none-any.whl", hash = "sha256:0dbf33f26c8d5305befd61b39d2b3414e8a407bedc2834dea9b8d642666fb40a", size = 28686, upload-time = "2024-06-09T16:20:16.715Z" },
 ]
+
+[[package]]
+name = "demiurge"
+version = "0.1.0"
+source = { editable = "security" }
+dependencies = [
+    { name = "httpx" },
+    { name = "keyring" },
+    { name = "msgpack" },
+    { name = "pynacl" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "shared" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+janus = [
+    { name = "playwright" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "keyring", specifier = ">=24" },
+    { name = "msgpack", specifier = ">=1.0" },
+    { name = "playwright", marker = "extra == 'janus'", specifier = ">=1.40" },
+    { name = "pynacl", specifier = ">=1.5" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "shared", editable = "shared" },
+]
+provides-extras = ["dev", "janus"]
 
 [[package]]
 name = "exceptiongroup"
@@ -3035,11 +3073,11 @@ version = "0.1.0"
 source = { editable = "channels/signal" }
 dependencies = [
     { name = "click" },
+    { name = "demiurge" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "shared" },
-    { name = "stevens-security" },
     { name = "uvicorn" },
 ]
 
@@ -3052,13 +3090,13 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1" },
+    { name = "demiurge", editable = "security" },
     { name = "fastapi", specifier = ">=0.110" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "pydantic", specifier = ">=2.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "shared", editable = "shared" },
-    { name = "stevens-security", editable = "security" },
     { name = "uvicorn", specifier = ">=0.27" },
 ]
 provides-extras = ["dev"]
@@ -3180,44 +3218,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/81/69/17425771797c36cde
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/c9/584bc9651441b4ba60cc4d557d8a547b5aff901af35bda3a4ee30c819b82/starlette-1.0.0-py3-none-any.whl", hash = "sha256:d3ec55e0bb321692d275455ddfd3df75fff145d009685eb40dc91fc66b03d38b", size = 72651, upload-time = "2026-03-22T18:29:45.111Z" },
 ]
-
-[[package]]
-name = "stevens-security"
-version = "0.1.0"
-source = { editable = "security" }
-dependencies = [
-    { name = "httpx" },
-    { name = "keyring" },
-    { name = "msgpack" },
-    { name = "pynacl" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "shared" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-janus = [
-    { name = "playwright" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "keyring", specifier = ">=24" },
-    { name = "msgpack", specifier = ">=1.0" },
-    { name = "playwright", marker = "extra == 'janus'", specifier = ">=1.40" },
-    { name = "pynacl", specifier = ">=1.5" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "shared", editable = "shared" },
-]
-provides-extras = ["dev", "janus"]
 
 [[package]]
 name = "tenacity"

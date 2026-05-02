@@ -1,4 +1,4 @@
-"""Tests for stevens_security.presets — preset loader + merger."""
+"""Tests for demiurge.presets — preset loader + merger."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from stevens_security.presets import (
+from demiurge.presets import (
     Preset,
     PresetError,
     PresetRule,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from stevens_security.channels_list import all_channels, render
+from demiurge.channels_list import all_channels, render
 
 
 def test_all_channels_includes_shipped_set():

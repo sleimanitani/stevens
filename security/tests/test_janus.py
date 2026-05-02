@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-from stevens_security.wizards.janus import (
+from demiurge.wizards.janus import (
     Click,
     Extract,
     FakeBrowserSession,
@@ -155,8 +155,8 @@ async def test_runner_extract_empty_value_errors():
 @pytest.mark.asyncio
 async def test_runner_store_missing_slot_errors():
     """Hand-rolled recipe that stores a slot it never extracted."""
-    from stevens_security.wizards.janus.recipe import register
-    from stevens_security.wizards.janus.steps import StoreSecret as _SS
+    from demiurge.wizards.janus.recipe import register
+    from demiurge.wizards.janus.steps import StoreSecret as _SS
 
     class BadRecipe:
         name = "bad_test_recipe"

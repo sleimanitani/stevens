@@ -8,8 +8,8 @@ import asyncio
 
 import pytest
 
-from stevens_security.framing import read_frame, write_frame
-from stevens_security.server import default_dispatch, start_server
+from demiurge.framing import read_frame, write_frame
+from demiurge.server import default_dispatch, start_server
 
 
 async def _round_trip(socket_path: str, request: object) -> dict:

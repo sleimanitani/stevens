@@ -2,7 +2,7 @@
 
 import pytest
 
-from stevens_security.capabilities.registry import (
+from demiurge.capabilities.registry import (
     CapabilityRegistry,
     RegistryError,
 )
@@ -91,8 +91,8 @@ def test_isolated_registries_do_not_leak():
 
 def test_module_level_capability_uses_default_registry():
     # Import is fine — the module registers `ping` on the default_registry.
-    from stevens_security.capabilities.ping import ping  # noqa: F401
-    from stevens_security.capabilities.registry import default_registry
+    from demiurge.capabilities.ping import ping  # noqa: F401
+    from demiurge.capabilities.registry import default_registry
 
     assert default_registry.get("ping") is not None
 

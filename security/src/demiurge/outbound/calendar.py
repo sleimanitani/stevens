@@ -1,6 +1,6 @@
 """Google Calendar outbound client.
 
-Mirrors :mod:`stevens_security.outbound.gmail` in every way that matters —
+Mirrors :mod:`demiurge.outbound.gmail` in every way that matters —
 same OAuth refresh-token → access-token path, same in-memory token cache,
 same error discipline. Different API endpoint.
 

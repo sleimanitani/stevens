@@ -1,4 +1,4 @@
-"""Tests for stevens_security.keyring_passphrase.
+"""Tests for demiurge.keyring_passphrase.
 
 Uses keyring's in-memory backend so the host's actual keychain isn't touched.
 """
@@ -9,7 +9,7 @@ import keyring
 import pytest
 from keyring.backend import KeyringBackend
 
-from stevens_security import keyring_passphrase
+from demiurge import keyring_passphrase
 
 
 class InMemoryBackend(KeyringBackend):

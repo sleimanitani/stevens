@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from stevens_security.wizards.google import (
+from demiurge.wizards.google import (
     GcloudStatus,
     WizardError,
     WizardInputs,
@@ -154,7 +154,7 @@ def test_wait_for_client_json_finds_new_file(tmp_path: Path):
             new_path.write_text('{"installed":{}}')
         return float(state["i"])
 
-    with patch("stevens_security.wizards.google.time.sleep", lambda s: None):
+    with patch("demiurge.wizards.google.time.sleep", lambda s: None):
         out = wait_for_client_json(
             downloads_dir=tmp_path, timeout_s=100, poll_interval_s=0.0,
             clock=fake_clock,
@@ -169,7 +169,7 @@ def test_wait_for_client_json_timeout(tmp_path: Path):
         state["i"] += 1
         return float(state["i"])
 
-    with patch("stevens_security.wizards.google.time.sleep", lambda s: None):
+    with patch("demiurge.wizards.google.time.sleep", lambda s: None):
         with pytest.raises(WizardError, match="timed out"):
             wait_for_client_json(
                 downloads_dir=tmp_path, timeout_s=2, poll_interval_s=0.0,
@@ -270,10 +270,10 @@ def test_run_wizard_happy_path(monkeypatch, tmp_path: Path):
     (tmp_path / "client_secret_X.json").write_text("{}")
     # Make the wait_for_client_json see a "new" file by faking pre-existing as empty.
     monkeypatch.setattr(
-        "stevens_security.wizards.google.wait_for_client_json",
+        "demiurge.wizards.google.wait_for_client_json",
         lambda **kw: tmp_path / "client_secret_X.json",
     )
-    monkeypatch.setattr("stevens_security.wizards.google.time.sleep", lambda s: None)
+    monkeypatch.setattr("demiurge.wizards.google.time.sleep", lambda s: None)
 
     inputs = WizardInputs(
         project_id="stevens-test",

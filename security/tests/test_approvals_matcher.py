@@ -6,11 +6,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from stevens_security.approvals.matcher import (
+from demiurge.approvals.matcher import (
     MatcherIndex,
     StandingApproval,
 )
-from stevens_security.approvals.predicates import (
+from demiurge.approvals.predicates import (
     PredicateError,
     match_predicate,
 )

@@ -1,7 +1,7 @@
 """Request dispatch pipeline.
 
 One function: :func:`build_dispatcher` returns a coroutine suitable for
-:func:`stevens_security.server.start_server`'s ``dispatch`` argument. It
+:func:`demiurge.server.start_server`'s ``dispatch`` argument. It
 orchestrates the full request path:
 
     frame decoded → identity verify → policy evaluate → capability lookup

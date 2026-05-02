@@ -45,7 +45,7 @@ def _load_passphrase() -> bytes:
 
 
 def _open_store():
-    from stevens_security.sealed_store import SealedStore
+    from demiurge.sealed_store import SealedStore
 
     root = Path(
         os.environ.get("STEVENS_SECURITY_SECRETS", "/var/lib/stevens/secrets")

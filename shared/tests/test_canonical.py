@@ -1,4 +1,4 @@
-"""Tests for the canonical msgpack encoder (moved from stevens_security in step 8)."""
+"""Tests for the canonical msgpack encoder (moved from demiurge in step 8)."""
 
 import pytest
 
@@ -58,7 +58,7 @@ def test_golden_fixture_small():
     assert canonical_encode(obj) == expected
 
 
-def test_reexport_from_stevens_security_is_the_same_function():
-    from stevens_security.canonical import canonical_encode as server_canonical
+def test_reexport_from_demiurge_is_the_same_function():
+    from demiurge.canonical import canonical_encode as server_canonical
 
     assert server_canonical is canonical_encode

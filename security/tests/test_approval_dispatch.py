@@ -9,14 +9,14 @@ import time
 import nacl.signing
 import pytest
 
-from stevens_security.approvals.matcher import MatcherIndex, StandingApproval
-from stevens_security.approvals.queue import InMemoryApprovalQueue
-from stevens_security.audit import AuditWriter
-from stevens_security.canonical import canonical_encode
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.dispatch import build_dispatcher
-from stevens_security.identity import NonceCache, RegisteredAgent
-from stevens_security.policy import AgentPolicy, CapabilityRule, Policy
+from demiurge.approvals.matcher import MatcherIndex, StandingApproval
+from demiurge.approvals.queue import InMemoryApprovalQueue
+from demiurge.audit import AuditWriter
+from demiurge.canonical import canonical_encode
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.dispatch import build_dispatcher
+from demiurge.identity import NonceCache, RegisteredAgent
+from demiurge.policy import AgentPolicy, CapabilityRule, Policy
 
 
 @pytest.fixture
@@ -292,7 +292,7 @@ async def test_non_gated_capability_unaffected(tmp_path, keypair):
 async def test_double_decide_raises(tmp_path):
     """Sanity test on the in-memory queue itself."""
     queue = InMemoryApprovalQueue()
-    from stevens_security.approvals.queue import ApprovalRequest, QueueError
+    from demiurge.approvals.queue import ApprovalRequest, QueueError
 
     rid = "req-1"
     await queue.enqueue(

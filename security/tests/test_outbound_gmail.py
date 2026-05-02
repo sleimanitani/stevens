@@ -15,16 +15,16 @@ from typing import List, Tuple
 import httpx
 import pytest
 
-from stevens_security.capabilities.gmail import (  # noqa: F401 — registers caps
+from demiurge.capabilities.gmail import (  # noqa: F401 — registers caps
     gmail_create_draft,
     gmail_get_thread,
     gmail_search,
 )
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.context import CapabilityContext
-from stevens_security.outbound.client import OutboundClient
-from stevens_security.outbound.gmail import GmailClient
-from stevens_security.sealed_store import initialize_store
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.context import CapabilityContext
+from demiurge.outbound.client import OutboundClient
+from demiurge.outbound.gmail import GmailClient
+from demiurge.sealed_store import initialize_store
 
 
 PASSPHRASE = b"test-passphrase"
@@ -152,7 +152,7 @@ async def test_access_token_cached_across_calls(tmp_path):
 
 @pytest.mark.asyncio
 async def test_api_error_propagates_as_outbound_error(tmp_path):
-    from stevens_security.outbound.client import OutboundError
+    from demiurge.outbound.client import OutboundError
 
     store = initialize_store(tmp_path / "vault", PASSPHRASE)
     _populate_store(store)

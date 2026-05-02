@@ -1,4 +1,4 @@
-"""Tests for stevens_security.bootstrap.cli_bootstrap — v0.10 step 4."""
+"""Tests for demiurge.bootstrap.cli_bootstrap — v0.10 step 4."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from stevens_security.bootstrap import cli_bootstrap as cb
-from stevens_security.bootstrap import postgres as bp
+from demiurge.bootstrap import cli_bootstrap as cb
+from demiurge.bootstrap import postgres as bp
 
 
 # ----------------------------- preflight ---------------------------------
@@ -212,7 +212,7 @@ def test_run_bootstrap_skips_systemd_on_macos(monkeypatch, capsys, tmp_path: Pat
 
 def test_top_level_stevens_bootstrap_in_help(capsys):
     """`stevens bootstrap` is registered as a top-level subcommand."""
-    from stevens_security.cli import build_parser
+    from demiurge.cli import build_parser
 
     parser = build_parser()
     with pytest.raises(SystemExit):
@@ -223,7 +223,7 @@ def test_top_level_stevens_bootstrap_in_help(capsys):
 
 
 def test_top_level_dispatches_to_run_bootstrap(monkeypatch):
-    from stevens_security import cli
+    from demiurge import cli
 
     captured = {}
 
@@ -233,7 +233,7 @@ def test_top_level_dispatches_to_run_bootstrap(monkeypatch):
         return 0
 
     monkeypatch.setattr(
-        "stevens_security.bootstrap.cli_bootstrap.run_bootstrap", fake_run
+        "demiurge.bootstrap.cli_bootstrap.run_bootstrap", fake_run
     )
     rc = cli.main(["bootstrap", "--dry-run"])
     assert rc == 0

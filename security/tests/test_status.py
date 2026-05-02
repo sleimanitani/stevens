@@ -1,4 +1,4 @@
-"""Tests for stevens_security.status."""
+"""Tests for demiurge.status."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 
 import yaml
 
-from stevens_security import audit_tail, status
-from stevens_security.sealed_store import initialize_store
+from demiurge import audit_tail, status
+from demiurge.sealed_store import initialize_store
 
 
 def test_status_empty_install(tmp_path: Path) -> None:

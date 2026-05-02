@@ -1,7 +1,7 @@
 [project]
-name = "stevens-security"
+name = "demiurge"
 version = "0.1.0"
-description = "Stevens Security Agent — sole broker for secrets and sensitive operations"
+description = "Demiurge — orchestrator + sole broker for secrets and sensitive operations across the Pantheon"
 requires-python = ">=3.10"
 dependencies = [
     "shared",
@@ -20,17 +20,17 @@ dev = [
 ]
 janus = [
     # Playwright-driven operator-assisted browser automation.
-    # Operators who never run `stevens janus` don't pay the install cost.
+    # Operators who never run `demiurge janus` don't pay the install cost.
     # Install: `uv sync --extra janus` then `uv run playwright install chromium`.
     "playwright>=1.40",
 ]
 
 [project.scripts]
-stevens = "stevens_security.cli:main"
+demiurge = "demiurge.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/stevens_security"]
+packages = ["src/demiurge"]

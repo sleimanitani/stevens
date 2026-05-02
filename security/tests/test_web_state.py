@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from stevens_security.outbound.web_state import DomainRateLimiter, TTLCache
+from demiurge.outbound.web_state import DomainRateLimiter, TTLCache
 
 
 def test_cache_hit_then_miss_after_expiry():

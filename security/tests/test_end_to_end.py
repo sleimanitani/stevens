@@ -13,14 +13,14 @@ import time
 import nacl.signing
 import pytest
 
-from stevens_security.audit import AuditWriter
-from stevens_security.canonical import canonical_encode
-from stevens_security.capabilities.registry import CapabilityRegistry
-from stevens_security.dispatch import build_dispatcher
-from stevens_security.framing import read_frame, write_frame
-from stevens_security.identity import NonceCache, RegisteredAgent
-from stevens_security.policy import AgentPolicy, CapabilityRule, Policy
-from stevens_security.server import start_server
+from demiurge.audit import AuditWriter
+from demiurge.canonical import canonical_encode
+from demiurge.capabilities.registry import CapabilityRegistry
+from demiurge.dispatch import build_dispatcher
+from demiurge.framing import read_frame, write_frame
+from demiurge.identity import NonceCache, RegisteredAgent
+from demiurge.policy import AgentPolicy, CapabilityRule, Policy
+from demiurge.server import start_server
 
 
 def sign(sk, *, caller, capability, params=None, nonce="n-1", ts=None):
@@ -51,7 +51,7 @@ async def send(socket_path, request):
 
 async def build_ping_server(tmp_path):
     """Shared fixture: server with dev_tester allowed to call ping."""
-    from stevens_security.capabilities.ping import ping  # ensure ping registered
+    from demiurge.capabilities.ping import ping  # ensure ping registered
 
     sk = nacl.signing.SigningKey.generate()
     identity_registry = {

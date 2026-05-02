@@ -80,7 +80,7 @@ DEFAULT_SERVICES: tuple[ServiceUnit, ...] = (
     ServiceUnit(
         name="stevens-security",
         description="Stevens Security Agent (Enkidu) — sole secret broker",
-        exec_cmd="python -m stevens_security",
+        exec_cmd="python -m demiurge",
     ),
     ServiceUnit(
         name="stevens-gmail-adapter",
@@ -299,7 +299,7 @@ def _default_repo_root() -> Path:
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
-    """``python -m stevens_security.bootstrap.systemd`` entrypoint.
+    """``python -m demiurge.bootstrap.systemd`` entrypoint.
 
     Default mode: print what the per-service units would look like (dry-run).
     ``--write``: actually write them into ``~/.config/systemd/user/`` and
@@ -309,7 +309,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(
-        prog="stevens_security.bootstrap.systemd",
+        prog="demiurge.bootstrap.systemd",
         description="Generate systemd user-unit files for Stevens services.",
     )
     p.add_argument(

@@ -28,18 +28,18 @@ from shared.events import (
     SystemDepInstalledEvent,
     SystemDepRequestedEvent,
 )
-from stevens_security.approvals.matcher import MatcherIndex, StandingApproval
-from stevens_security.approvals.queue import InMemoryApprovalQueue
-from stevens_security.audit import AuditWriter
-from stevens_security.canonical import canonical_encode
-from stevens_security.capabilities import system as system_caps  # noqa: F401 — registers
-from stevens_security.capabilities.registry import default_registry
-from stevens_security.context import CapabilityContext
-from stevens_security.dispatch import build_dispatcher
-from stevens_security.identity import NonceCache, RegisteredAgent
-from stevens_security.mechanisms.base import ExecResult, Executor
-from stevens_security.policy import AgentPolicy, CapabilityRule, Policy
-from stevens_security.system_runtime import (
+from demiurge.approvals.matcher import MatcherIndex, StandingApproval
+from demiurge.approvals.queue import InMemoryApprovalQueue
+from demiurge.audit import AuditWriter
+from demiurge.canonical import canonical_encode
+from demiurge.capabilities import system as system_caps  # noqa: F401 — registers
+from demiurge.capabilities.registry import default_registry
+from demiurge.context import CapabilityContext
+from demiurge.dispatch import build_dispatcher
+from demiurge.identity import NonceCache, RegisteredAgent
+from demiurge.mechanisms.base import ExecResult, Executor
+from demiurge.policy import AgentPolicy, CapabilityRule, Policy
+from demiurge.system_runtime import (
     InMemoryInventory,
     InMemoryPlanStore,
     SystemRuntime,

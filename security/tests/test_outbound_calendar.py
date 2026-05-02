@@ -9,7 +9,7 @@ from typing import List
 import httpx
 import pytest
 
-from stevens_security.capabilities.calendar import (  # noqa: F401
+from demiurge.capabilities.calendar import (  # noqa: F401
     cal_delete_event,
     cal_get_event,
     cal_insert_event,
@@ -19,10 +19,10 @@ from stevens_security.capabilities.calendar import (  # noqa: F401
     cal_stop_channel,
     cal_watch_events,
 )
-from stevens_security.context import CapabilityContext
-from stevens_security.outbound.calendar import CalendarClient
-from stevens_security.outbound.client import OutboundClient, OutboundError
-from stevens_security.sealed_store import initialize_store
+from demiurge.context import CapabilityContext
+from demiurge.outbound.calendar import CalendarClient
+from demiurge.outbound.client import OutboundClient, OutboundError
+from demiurge.sealed_store import initialize_store
 
 
 PASSPHRASE = b"test-passphrase"

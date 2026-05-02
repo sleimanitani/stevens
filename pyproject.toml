@@ -17,6 +17,6 @@ gmail-adapter = { workspace = true }
 whatsapp-cloud-adapter = { workspace = true }
 calendar-adapter = { workspace = true }
 agents = { workspace = true }
-stevens-security = { workspace = true }
+demiurge = { workspace = true }
 skills = { workspace = true }
 signal-adapter = { workspace = true }

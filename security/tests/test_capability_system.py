@@ -10,11 +10,11 @@ from typing import Any, Dict, List
 
 import pytest
 
-from stevens_security.capabilities import system as system_caps  # noqa: F401 — registers
-from stevens_security.capabilities.registry import default_registry
-from stevens_security.context import CapabilityContext
-from stevens_security.mechanisms.base import ExecResult, Executor
-from stevens_security.system_runtime import (
+from demiurge.capabilities import system as system_caps  # noqa: F401 — registers
+from demiurge.capabilities.registry import default_registry
+from demiurge.context import CapabilityContext
+from demiurge.mechanisms.base import ExecResult, Executor
+from demiurge.system_runtime import (
     InMemoryInventory,
     InMemoryPlanStore,
     SystemRuntime,

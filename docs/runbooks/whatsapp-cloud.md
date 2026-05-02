@@ -18,7 +18,7 @@ This is for **business numbers** registered through Meta's WhatsApp Cloud API. F
 - A Meta app linked to the WABA.
 - A **System User** with permanent access token (NOT the temporary 24-hour token from the dashboard — that one expires daily).
 - A public webhook URL reachable from Meta (Tailscale Funnel / Cloudflare Tunnel — must be HTTPS).
-- The `whatsapp-cloud-adapter` service brought up via compose (it serves the webhook on port 8082 by default).
+- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed store initialized. The whatsapp-cloud-adapter service runs as the systemd user unit `stevens-whatsapp-cloud-adapter` (port 8082); start it with `systemctl --user start stevens-whatsapp-cloud-adapter`.
 
 ## Manual prep in Meta Business Manager (one-time)
 

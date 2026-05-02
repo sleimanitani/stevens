@@ -20,8 +20,10 @@ matches what the CLI actually does post-v0.6 and v0.7).
 
 - A Google account with permission to create a GCP project (any personal
   Google account or Workspace user).
-- Local machine has: `gcloud` CLI, Docker, Postgres up (compose),
-  Stevens migrations applied. See [`README.md`](README.md) §"Fresh-install master flow".
+- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed
+  store initialized (`stevens secrets init`). See
+  [`README.md`](README.md) §"Fresh-install master flow".
+- `gcloud` CLI available on your local machine.
 - Janus extra installed: `uv sync --extra janus` + `uv run playwright install chromium`.
 - A public webhook URL to receive Gmail's Pub/Sub pushes
   (Tailscale Funnel, Cloudflare Tunnel, ngrok, anything Google can reach over HTTPS).

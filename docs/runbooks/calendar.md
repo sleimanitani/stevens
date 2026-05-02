@@ -13,7 +13,8 @@ End state: each Calendar account you onboard publishes `calendar.event.changed.<
 
 - A Google Calendar account (any Google account that has Calendar enabled — it does, by default).
 - A GCP project with the Calendar API enabled and an OAuth Desktop client. **You can reuse the same project + OAuth client you set up for Gmail** — just store the secrets under separate `calendar.*` names so credential rotation is independent.
-- The same machine prep as Gmail: gcloud auth, Janus extra (if you're using the wizard path), Postgres up.
+- Stevens already installed: `uv run stevens bootstrap` succeeded, sealed store initialized. See [`README.md`](README.md) §"Fresh-install master flow".
+- `gcloud` auth + Janus extra (same as Gmail).
 - A public webhook URL to receive Calendar's push channels (separate path from Gmail; e.g. `https://stevens.example.ts.net/calendar/push`).
 
 ## Steps

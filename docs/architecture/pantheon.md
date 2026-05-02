@@ -60,6 +60,15 @@ The system isn't static. Capabilities can rise into the core, fade out of it, ge
 - A **Mortal** is born with a mission, does its work, and ends — unless its capability turns out to be needed across many tasks, in which case it *ascends* into the core.
 - A **Pantheon member** holds its domain as long as that domain is genuinely shared — and if usage fades, problems arise, or a successor takes over, it can be *diminished, exiled, bound, or retired*.
 
+## Who carries out the transitions
+
+The metaphor names *what happens*. Two specific Pantheon members name *who does it*:
+
+- **Hephaestus**, smith of the gods, owns the **creation side**. When you spawn a Mortal, when an Apotheosis promotes a Mortal capability into the core, when a Succession installs a new implementation in an existing domain — Hephaestus reads the manifest, registers the capability with Enkidu, generates the runtime artifact (systemd unit, listener subscription, polling timer, depending on what the manifest declares), and wires the bus subscriptions. The forge.
+- **Hades**, lord of the dead, owns the **ending side**. When a Mortal's task is done, when a Pantheon member is Faded, Exiled, or undergoes Ragnarök — Hades tears down the runtime, revokes the capabilities, and archives the audit trail and last state to the underworld store. The graveyard with a librarian.
+
+Demiurge — the orchestrator above the Pantheon — *decides* which transition applies based on policy and operator input. The actual mechanics route through Hephaestus or Hades depending on direction (creation or ending). The canonical roster of all Pantheon members and the executor table for each lifecycle event live in [`DEMIURGE.md`](../../DEMIURGE.md) §1.1.
+
 ## What it means for you
 
 You interact with the Pantheon **by name and by trust** — these are your standing officers. You know what each one does, you've granted them durable permissions, and you've decided they're trustworthy enough to hold the keys. You interact with Mortals **by intent** — you describe an outcome and the system creates whoever's needed, with just the access required for that job and nothing more. You don't track them individually unless one earns its way into your attention.

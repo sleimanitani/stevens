@@ -45,10 +45,23 @@ Mortals do *not* get mythological names. They get descriptive snake_case identif
 | `web` | **Arachne** | shipped (v0.3.1) | weaver of fetches and searches — async-path web agent. Greek myth: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
 | `pdf` | **Sphinx** | shipped (v0.4) | decoder of documents — PDF strategy router. Greek myth: poser/answerer of riddles; matches "pick the right way to decode this document". Routes between native pdfplumber, OCR fallback, and IBM Docling. |
 | `janus` | **Janus** | shipped (v0.7) | operator-assisted browser-driven OAuth/config-screen helper. Roman myth: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system. Code id matches display name. |
+| `forge` | **Hephaestus** | planned (v0.11) | creator of Mortals. Forges new Mortals from a manifest: registers capabilities with Enkidu, generates the systemd user unit (or other runtime shape per the manifest's `runtime` block), wires bus subscriptions, records the apotheosis hook for any future promotion. Greek myth: smith of the gods, builder of automata and divine devices — the natural fit for "the one who builds the Mortals." Owns the executor side of **Apotheosis**, **Succession**, **Binding**. |
+| `underworld` | **Hades** | planned (v0.11) | destroyer / archivist of Mortals. Ends Mortals when their work is complete, demoted, or exiled: tears down the systemd unit, revokes capabilities, archives the audit trail and last state to the underworld store, frees secrets back to Enkidu. Owns the executor side of **Fading**, **Exile**, **Ragnarök**. Greek myth: lord of the dead, judge of finished lives. |
 | `memory` | **Mnemosyne** | planned (v0.12) | long-term structured memory + context retrieval across conversations and channels. Greek myth: titaness of memory, mother of the Muses. |
 | `interface` | **Iris** | planned (v0.12) | the user-facing persona; all external dialogue signs as Demiurge but is composed by Iris. Greek myth: messenger goddess, rainbow bridge between gods and mortals — the natural fit for a UI surface. |
 
 When promoting a new member to the Pantheon (Apotheosis, or initial design): add a row here with the mythological justification (one line: which character, why the fit). Don't rename code identifiers retroactively.
+
+**Lifecycle executors.** The lifecycle vocabulary above (Apotheosis / Succession / Fading / Exile / Binding / Ragnarök) names *what happens*; Hephaestus and Hades name *who does it*. Demiurge orchestrates — it decides the lifecycle transition based on policy and operator input — then routes the actual mechanism through Hephaestus (creation/promotion side) or Hades (ending/archiving side):
+
+| Transition | Owner | Mechanism |
+|---|---|---|
+| Apotheosis (Mortal → Pantheon, or Mortal spawn) | Hephaestus | forge: register caps + generate unit + wire subscriptions |
+| Succession (Pantheon member replaced in same domain) | Hephaestus | forge new + Hades archive old |
+| Binding (retired but kept reachable for legacy state) | Hephaestus + Hades | freeze code, scope down caps, keep audit channel |
+| Fading (Pantheon member's domain no longer broadly needed) | Hades | archive: capture state, document, demote |
+| Exile (pulled after a problem) | Hades | sever: capabilities revoked, evidence preserved |
+| Ragnarök (full removal) | Hades | purge audit-archived end state, drop all artifacts |
 
 #### Mortals (no fixed list)
 

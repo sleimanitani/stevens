@@ -5,7 +5,7 @@
 **Active milestone:** `v0.11-plugins` — channels + Mortals as entry-point plugins (DEMIURGE.md §2 Principle 13). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`. `demiurge channels install <name>` + `demiurge hire spawn <spec>` become the operator-facing surface.
 **Active Build Plan:** [`plans/v0.11-plugins.md`](plans/v0.11-plugins.md)
 **Queued:** v0.12-pantheon-expansion (Mnemosyne + Iris) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage (these become individual plugins under the v0.11 model rather than in-tree code).
-**Architecture framing:** Pantheon vs Mortals — `docs/architecture/pantheon.md` (uploaded by Sol 2026-05-02). Ratified into DEMIURGE.md §1.1 + Principles 12–14. Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Mnemosyne (memory, v0.12), Iris (interface, v0.12).
+**Architecture framing:** Pantheon vs Mortals — `docs/architecture/pantheon.md` (uploaded by Sol 2026-05-02). Ratified into DEMIURGE.md §1.1 + Principles 12–14. Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Hephaestus (forge / Mortal creator, v0.11), Hades (underworld / Mortal destroyer, v0.11), Mnemosyne (memory, v0.12), Iris (interface, v0.12). Demiurge itself is *not* a Pantheon member — it's the orchestrator above the Pantheon (locked 2026-05-02 alongside the rename from "Stevens").
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.

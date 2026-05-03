@@ -123,7 +123,10 @@ Six steps shipped today + the cosmology lock-in:
 | ✓ | 4 | `26ecb99` | Hades archive functions |
 | ✓ | 5 | `aa32e01` | `demiurge powers` CLI |
 | ✓ | 6 | `5be7565` | `demiurge hire` CLI |
-| ⏳ | 7 | — | runtime supervisor |
+| ✓ | 7.1 | _pending_ | core process supervisor (subprocess lifecycle + backoff + pause/resume + logs) |
+| ⏳ | 7.2 | — | power-runtime integration (entry-point discovery → reactive plugins as supervised subprocesses) |
+| ⏳ | 7.3 | — | Creature-runtime integration + audit-angel observation + real `demiurge hire pause/resume` |
+| ⏳ | 7.4 | — | systemd user unit `demiurge-runtime.service` + `demiurge runtime` CLI surface |
 | ⏳ | 8 | — | migrate channels → powers |
 | ⏳ | 9 | — | migrate Mortals to plugins |
 | ⏳ | 10 | — | runbook overhaul |

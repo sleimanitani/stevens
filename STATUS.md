@@ -5,7 +5,7 @@
 **Active milestone:** `v0.11-plugins` — channels + Mortals as entry-point plugins (DEMIURGE.md §2 Principle 13). Existing channels and Mortals migrate from in-tree directories into per-plugin packages under `plugins/`. `demiurge channels install <name>` + `demiurge hire spawn <spec>` become the operator-facing surface.
 **Active Build Plan:** [`plans/v0.11-plugins.md`](plans/v0.11-plugins.md)
 **Queued:** v0.12-pantheon-expansion (Mnemosyne + Iris) · v0.5.1-slack · v0.5.2-discord · v0.5.3-telegram · v0.5.4-imessage (these become individual plugins under the v0.11 model rather than in-tree code).
-**Architecture framing:** Pantheon vs Mortals — `docs/architecture/pantheon.md` (uploaded by Sol 2026-05-02). Ratified into DEMIURGE.md §1.1 + Principles 12–14. Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Hephaestus (forge / Mortal creator, v0.11), Hades (underworld / Mortal destroyer, v0.11), Mnemosyne (memory, v0.12), Iris (interface, v0.12). Demiurge itself is *not* a Pantheon member — it's the orchestrator above the Pantheon (locked 2026-05-02 alongside the rename from "Stevens").
+**Architecture framing:** Three-layer cosmology — Demiurge (substrate, not a god) / Pantheon (named gods) / Creatures (Mortal / Beast / Automaton / Angel + future Prophet). Authoritative roster in [`DEMIURGE.md`](DEMIURGE.md) §1.1; quick-reference in [`docs/architecture/gods.md`](docs/architecture/gods.md); deeper architecture (angel pattern, observation feed, forge flow, opacity rules) in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md). Pantheon today: Enkidu, Arachne, Sphinx, Janus. Pantheon planned: Hephaestus + Hades (v0.11), Iris (v0.12, personal UI for Sol), Zeus (v0.12-13, chairman / multi-god dispatch), Mnemosyne (v0.13, all-history keeper). Reserved names: Mimir, Atlas. (Locked 2026-05-03.)
 **Predecessors (complete):**
 - [`plans/v0.1-sec.md`](plans/v0.1-sec.md) — security foundation, `133dd78`.
 - [`plans/v0.1.6-ergonomics.md`](plans/v0.1.6-ergonomics.md) — operator CLI surface, `9b32865`.
@@ -75,9 +75,11 @@
 
 **Step 1 shipped** (`d373d74`, 2026-05-02): `shared.plugins.manifest` with the full Pydantic model + 22 unit tests.
 
-**Step 2 shipped** (this commit, 2026-05-03): `shared.plugins.discovery` wraps `importlib.metadata.entry_points` for the `demiurge.powers` and `demiurge.mortals` groups. Fault-tolerant — one broken plugin doesn't mask the others; failures land in `DiscoveryResult.errors` with operator-readable reasons. Plus `load_manifest_for_package()` convenience for plugins that ship `plugin.yaml` as a data file.
+**Step 2 shipped** (`a2ff475`, 2026-05-03): `shared.plugins.discovery`.
 
-**Next: step 3** — Hephaestus (forge) module. `security/src/demiurge/pantheon/hephaestus.py` with `forge_power(manifest, ...)` (registers caps with Enkidu, generates the runtime artifact per `modes:` + `runtime:`, runs the bootstrap hook) and `forge_mortal(manifest, params, ...)` (creates per-Mortal Postgres schema, provisions agent identity, hands scoped policy to Enkidu). Idempotent.
+**Step 3 design locked** (2026-05-03): the Hephaestus design discussion expanded the cosmology and ratified the locked architecture. See DEMIURGE.md §1.1 + docs/architecture/gods.md + docs/architecture/pantheon.md. Step 3 split into 3a–3e accordingly.
+
+**Next: step 3a** — `shared.creatures` package (Mortal/Beast/Automaton/Angel ABCs + contexts + universal tools `think`/`mortal.return` + observation feed writer). Pure types + a few stub impls; no god integration yet. After 3a: 3b (blessing protocol), 3c (tool routing + dispatch), 3d (`forge_power`), 3e (`forge_mortal/forge_beast/forge_automaton` + audit angel placeholder + scheduler Automaton).
 
 **After v0.11:**
 - **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory and dialogue surfaces instead of inventing them per-Mortal.

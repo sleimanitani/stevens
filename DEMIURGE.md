@@ -22,54 +22,118 @@ This document defines:
 - **User-facing persona:** embodied by the UI agent. All user-visible dialogue signs as Demiurge, regardless of which internal agent did the work.
 - **Design stance:** small agents, shared infrastructure, many git checkpoints, reuse over rewrite, explicit trust boundaries. Every new capability should *reduce* the marginal cost of the next capability.
 
-### 1.1 Two tiers — Pantheon and Mortals
+### 1.1 Cosmology — Demiurge, the Pantheon, and the Creatures
 
-Demiurge runs on a two-tier agent architecture: a small **Pantheon** of permanent core services that other agents depend on, and a population of **Mortals** — task/project/domain agents that are spawned, do their work, and may be retired. Full architecture writeup in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md). The short version:
+Demiurge runs on a layered architecture borrowed from Greek-mythology vocabulary because the metaphor maps cleanly onto the engineering. **The metaphor is not decorative — it's a working ontology that constrains design decisions.**
 
-- **Pantheon members** face inward, hold sensitive state, and are depended on by everything else. They ship with Demiurge core, get broad capability grants because they are vetted code, and have mythological names because they are persistent characters in the system.
-- **Mortals** face outward, do specific jobs, and depend on the Pantheon for everything sensitive. They get scoped capability grants per-instance, are namespaced in storage, and can be retired cleanly. They are named after their function (Email PM, Trip Planner) — no mythological branding. The lack of a hero name is the signal.
+Three layers, in order of trust:
 
-The lifecycle vocabulary is fixed (see `pantheon.md` §"How things change"): **Apotheosis** (Mortal capability promoted into the Pantheon), **Succession** (new implementation replaces an old Pantheon member in the same domain), **Fading** (a Pantheon member's domain is no longer broadly needed), **Exile** (Pantheon member pulled after a problem), **Binding** (retired but kept reachable for legacy state), **Ragnarök** (full removal). Use the term, not a paraphrase, in plans + docs + commit messages.
+1. **Demiurge** — the substrate. Pre-Olympian. *Not* a god; the craftsman who shapes the world the gods inhabit. In code terms: bootstrap, supervisor, install machinery, package layout, lifecycle manager. No LLM. Doesn't reason; orchestrates. Faces Sol-as-operator (CLI) and the OS.
+2. **The Pantheon** — the named gods. Permanent core services with mythological names. Each owns a domain (security, memory, web, etc.) or a coordination role (chairman, interface). Get broad capability grants because they are vetted code. Always observed by Enkidu's audit angel; some additionally observed by other gods' angels.
+3. **The Creatures** — task-scoped beings created by Hephaestus on a god's blessing. Four kinds: Mortals (full agency, LLM-driven), Beasts (model-driven, no agency), Automatons (deterministic, no LLM), Angels (god-extensions, opaque). A future fifth type — Prophets — is reserved.
+
+Full architecture writeup in [`docs/architecture/pantheon.md`](docs/architecture/pantheon.md).
+
+The lifecycle vocabulary is fixed: **Apotheosis** (Mortal capability promoted into the Pantheon), **Succession** (new implementation replaces an old Pantheon member in the same domain), **Fading** (a Pantheon member's domain is no longer broadly needed), **Exile** (Pantheon member pulled after a problem), **Binding** (retired but kept reachable for legacy state), **Ragnarök** (full removal). Use the term, not a paraphrase, in plans + docs + commit messages.
 
 #### Naming
 
 Pantheon members get human-readable mythological names alongside their snake_case code identifiers. Names are display-only — they appear in logs, CLI banners, audit summaries, and docs. Code identifiers (`security_agent`, container names, socket paths, capability allow rules) are **not** renamed when display names change; that would be churn for no functional benefit and would muddy the audit trail across the rename.
 
-Mortals do *not* get mythological names. They get descriptive snake_case identifiers tied to their job (`email_pm`, `trip_planner`, `berwyn_deal`). Display names are equally descriptive ("Email PM", "Trip Planner — Tokyo Sept '26"). If you find yourself reaching for a hero name for a Mortal, that's a signal it might actually be a Pantheon candidate — escalate the design instead.
+Creatures do *not* get mythological names (except Angels and the future Prophet — those are creature *kinds*, not individuals). Mortals/Beasts/Automatons get descriptive snake_case identifiers tied to their job (`email_pm`, `trip_planner`, `berwyn_deal`, `image_gen`, `rss_reader`, `scheduler`). Display names are equally descriptive. If you find yourself reaching for a hero name for a Creature, that's a signal it might actually be a Pantheon candidate — escalate the design instead.
 
-#### Pantheon members (current + planned)
+#### The Pantheon — full roster
 
-| Code identifier | Display name | Status | Role |
-|---|---|---|---|
-| `security_agent` | **Enkidu** | shipped | sole broker for secrets and sensitive operations (§3) |
-| `web` | **Arachne** | shipped (v0.3.1) | weaver of fetches and searches — async-path web agent. Greek myth: mortal weaver who challenged Athena and was transformed into a spider; the spider/weaver imagery maps to crawlers/searchers. |
-| `pdf` | **Sphinx** | shipped (v0.4) | decoder of documents — PDF strategy router. Greek myth: poser/answerer of riddles; matches "pick the right way to decode this document". Routes between native pdfplumber, OCR fallback, and IBM Docling. |
-| `janus` | **Janus** | shipped (v0.7) | operator-assisted browser-driven OAuth/config-screen helper. Roman myth: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system. Code id matches display name. |
-| `forge` | **Hephaestus** | planned (v0.11) | creator of Mortals. Forges new Mortals from a manifest: registers capabilities with Enkidu, generates the systemd user unit (or other runtime shape per the manifest's `runtime` block), wires bus subscriptions, records the apotheosis hook for any future promotion. Greek myth: smith of the gods, builder of automata and divine devices — the natural fit for "the one who builds the Mortals." Owns the executor side of **Apotheosis**, **Succession**, **Binding**. |
-| `underworld` | **Hades** | planned (v0.11) | destroyer / archivist of Mortals. Ends Mortals when their work is complete, demoted, or exiled: tears down the systemd unit, revokes capabilities, archives the audit trail and last state to the underworld store, frees secrets back to Enkidu. Owns the executor side of **Fading**, **Exile**, **Ragnarök**. Greek myth: lord of the dead, judge of finished lives. |
-| `memory` | **Mnemosyne** | planned (v0.12) | long-term structured memory + context retrieval across conversations and channels. Greek myth: titaness of memory, mother of the Muses. |
-| `interface` | **Iris** | planned (v0.12) | the user-facing persona; all external dialogue signs as Demiurge but is composed by Iris. Greek myth: messenger goddess, rainbow bridge between gods and mortals — the natural fit for a UI surface. |
+The canonical list of named gods. Authoritative; update this row with any Apotheosis or Succession.
 
-When promoting a new member to the Pantheon (Apotheosis, or initial design): add a row here with the mythological justification (one line: which character, why the fit). Don't rename code identifiers retroactively.
+| Code identifier | Display name | Status | LLM? | Role |
+|---|---|---|---|---|
+| `security_agent` | **Enkidu** | shipped | no | **Sole secret broker.** Owns the sealed store, capability dispatch + policy enforcement, the tamper-evident audit log. Always observes every Creature with a mandatory audit angel — no exceptions. Greek myth: companion of Gilgamesh, wild-born guardian. (§3) |
+| `web` | **Arachne** | shipped (v0.3.1) | no | Async-path web fetch + search. Per-domain allowlist, in-memory TTL cache, per-domain rate limiter, modular search backends (Brave default). Greek myth: mortal weaver who challenged Athena, transformed into a spider — the spider/weaver maps to crawlers/searchers. |
+| `pdf` | **Sphinx** | shipped (v0.4) | no | PDF strategy router. Decoder of documents. Routes between native pdfplumber, OCR fallback (tesseract), and IBM Docling. Greek myth: poser/answerer of riddles — pick the right way to decode this document. |
+| `janus` | **Janus** | shipped (v0.7) | no | Operator-assisted browser-driven OAuth/config-screen helper. Roman myth: god of doorways, transitions, beginnings — two-faced, looks back and forward. Drives the operator across the threshold into a new system. Code id matches display name. |
+| `forge` | **Hephaestus** | planned (v0.11) | no (deterministic) | **Creator of Creatures.** Forges Mortals, Beasts, Automatons from manifests: validates manifest, mints `creature_id`, gathers blessings from each relevant god in parallel, surfaces operator approval if any policy demands it, materializes the runtime artifact, attaches the mandatory Enkidu audit angel + any optional angels other gods commissioned, hands off to the supervisor. Owns the executor side of **Apotheosis**, **Succession** (forge), **Binding** (forge). Greek myth: smith of the gods, builder of automata and divine devices. |
+| `underworld` | **Hades** | planned (v0.11) | no (deterministic) | **Destroyer + archivist of Creatures.** Ends Creatures: tears down the runtime, revokes capabilities, archives the audit trail and last state, frees secrets back to Enkidu, retires attached angels. Owns **Fading**, **Exile**, **Ragnarök**, **Succession** (sever), **Binding** (archival). Greek myth: lord of the dead, judge of finished lives. |
+| `memory` | **Mnemosyne** | planned (v0.13) | optional | **Keeper of all history.** Owns the persistent record of what has happened across all Creatures. Assigns each Creature's observation feed to a storage location (table/shard/db) — owns sharding + load balancing as scale grows. Provides the `tools.memory.recall(query)` blessed tool (Mortals' only memory surface). Commissions a memory angel for every Creature once she ships. Greek myth: titaness of memory, mother of the Muses. |
+| `interface` | **Iris** | planned (v0.12) | yes (dialogue) | **Personal UI agent.** Knows Sol's modality preferences (voice / text / multimodal / notifications), per-channel routing rules, quiet hours, vocal tone, language. Translates Sol's natural-language wishes into structured intents (handed to Zeus). Presents results back in Sol's preferred modality. Owns notification routing decisions. Does *not* orchestrate gods — that's Zeus. Iris is Sol-facing only. Greek myth: messenger goddess, rainbow bridge between gods and mortals. |
+| `coordination` | **Zeus** | planned (v0.12 or v0.13) | yes (judgment) | **Chairman of the Pantheon.** Receives structured intents (from Iris on Sol's behalf, or from Mortals via blessed `zeus.*` tools). Reasons about which gods need to be involved, dispatches multi-god operations in parallel, aggregates responses, judges cross-god conflicts, makes the call on whether a request proceeds. Only Pantheon member whose domain is *coordination itself* — every other god has a substantive domain (secrets, memory, web, etc.). Greek myth: king of the gods, head of the divine council. |
 
-**Lifecycle executors.** The lifecycle vocabulary above (Apotheosis / Succession / Fading / Exile / Binding / Ragnarök) names *what happens*; Hephaestus and Hades name *who does it*. Demiurge orchestrates — it decides the lifecycle transition based on policy and operator input — then routes the actual mechanism through Hephaestus (creation/promotion side) or Hades (ending/archiving side):
+**Reserved names** (not yet a Pantheon member, but the names are claimed for future roles):
+
+| Reserved | Possible role | Why reserved |
+|---|---|---|
+| `mimir` | Knowledge / wisdom layer distinct from Mnemosyne's raw history. If memory and structured-knowledge ever cleave, Mimir would own the latter. | Norse myth: severed head of wisdom; predates the Aesir-Vanir war; Odin consults him. |
+| `atlas` | Substrate-level role distinct from Demiurge — possibly the supervisor / process-tree layer if it ever needs its own god. | Greek myth: Titan who holds up the heavens; substrate fit. |
+
+When promoting a new member to the Pantheon (Apotheosis, or initial design): add a row to the roster with the mythological justification (one line: which character, why the fit). Don't rename code identifiers retroactively.
+
+#### Lifecycle executors
+
+The lifecycle vocabulary above (Apotheosis / Succession / Fading / Exile / Binding / Ragnarök) names *what happens*; Hephaestus and Hades name *who does it*. Demiurge decides the transition based on policy and operator input; Zeus may coordinate when multiple gods need to weigh in; the actual mechanism routes through Hephaestus (creation/promotion side) or Hades (ending/archiving side):
 
 | Transition | Owner | Mechanism |
 |---|---|---|
-| Apotheosis (Mortal → Pantheon, or Mortal spawn) | Hephaestus | forge: register caps + generate unit + wire subscriptions |
-| Succession (Pantheon member replaced in same domain) | Hephaestus | forge new + Hades archive old |
+| Apotheosis (Mortal → Pantheon, or Creature spawn) | Hephaestus | forge: validate manifest, mint id, gather blessings, materialize runtime, attach angels |
+| Succession (Pantheon member replaced in same domain) | Hephaestus + Hades | forge new + Hades archive old; routed via Zeus when multiple gods touched |
 | Binding (retired but kept reachable for legacy state) | Hephaestus + Hades | freeze code, scope down caps, keep audit channel |
 | Fading (Pantheon member's domain no longer broadly needed) | Hades | archive: capture state, document, demote |
 | Exile (pulled after a problem) | Hades | sever: capabilities revoked, evidence preserved |
 | Ragnarök (full removal) | Hades | purge audit-archived end state, drop all artifacts |
 
-#### Mortals (no fixed list)
+#### The Creatures — four kinds (+ one reserved)
 
-Mortals are not enumerated in the charter — they come and go. They are listed as installed plugins via `demiurge hire list`. Examples that exist or are obvious near-term:
+Creatures are *not* gods. They are forged by Hephaestus on a god's blessing, live a bounded life, and are retired by Hades. Four kinds today; a fifth reserved.
 
-- `email_pm` — inbox triage Mortal (currently in core; may move to plugin form in v0.11).
+| Kind | Has LLM? | Has agency? | Visible to Sol? | Visible to other Creatures? | Examples |
+|---|---|---|---|---|---|
+| **Mortal** | yes (full reasoning loop) | yes, scoped to its blessings | yes (`demiurge hire list`) | yes (bus events; calls to existing Beasts/Automatons) | email_pm, trip_planner, installer, researcher |
+| **Beast** | yes (model call, no loop) | no — function-shaped (in → out) | yes (`demiurge beasts list`) | yes (called by Mortals as blessed tools) | image_gen, embedder, classifier, summarizer, OCR, transcription |
+| **Automaton** | no | no — deterministic, scheduled | yes (`demiurge automata list`) | not directly (acts only via bus events) | rss_reader, scheduler, port_scanner, log_shipper |
+| **Angel** | optional | bound — serves a single god | **no** (without a future Prophet credential) | **no** | Enkidu's audit angel, Mnemosyne's memory angel |
+| *Prophet* (reserved) | yes | privileged perception | yes | sees angels | not yet built |
+
+**The Beast vs. tool distinction:** if it has a model and produces stochastic / generative output, it's a Beast (a Creature with identity, audit trail, retire-able). If it's a deterministic transformation, it's a tool (a function called via the capability registry, no separate identity). Image generators are Beasts; PDF reading is a tool (Sphinx-routed).
+
+**The Angel rule (opacity is hard):** Angels are spawned by gods, attached to Creatures at forge time. They observe the Creature externally via Enkidu's unified observation feed (read-only handle), project their slice into their commissioning god's substrate, and report back via a dedicated god-only IPC channel. Angels are **invisible** by design: not in `demiurge hire show`, not in audit summaries, not in any Creature's `tools.list()`. The host Creature does not know its angels exist. Even Sol does not see angels by default — the future Prophet credential is the explicit escape hatch. Process-level isolation (separate OS process, separate uid where possible) is what enforces opacity; Python politeness is not enough.
+
+#### Permission immutability + the microservices rule
+
+A Creature's blessings are set at forge time and **do not change for its lifetime**. Want different permissions? Retire (Hades) and forge fresh (Hephaestus). No live mutation. Only gods grant blessings; only Sol approves the underlying policy.
+
+A Mortal cannot summon another Creature directly. Spawning is a god-level act:
+
+- In v0.11, only Sol can spawn (via `demiurge hire install / spawn`).
+- In v0.12+, Mortals can *request* a spawn from Zeus via a blessed tool; Zeus evaluates, gathers blessings, asks Hephaestus to forge. Iris is in the path *only* when the request originates from Sol (she translates dialogue → structured intent → Zeus).
+
+Mortals working *with* each other within their existing capabilities is fine — they communicate via the bus (event-driven) or call existing Beasts/Automatons via blessed tools. Static authority graph, no dynamic permission lending.
+
+#### The unified observation feed
+
+Every Creature has a single per-Creature event log at `~/.local/state/demiurge/creatures/<id>/events.jsonl`, mode 0640, owned by Enkidu's uid, group-readable by an `angels` group. Every observable event the Creature does — capability call start/end, `think()` call, LLM exchange, lifecycle event — is appended by the supervisor (under Enkidu's control) with a stable envelope:
+
+```json
+{ "schema_version": 1, "creature_id": "...", "event_id": "<UUIDv7>", "ts": "<ISO8601 µs>",
+  "kind": "tool.call.start | tool.call.end | think | llm.exchange | lifecycle",
+  "correlation_id": "<event_id of parent action>", "data": { /* kind-specific */ } }
+```
+
+Angels are *projections* of this feed:
+
+- **Audit angel (Enkidu)** projects `tool.call.*` into the tamper-evident audit log (the existing `audit/<date>.jsonl`). Mandatory for every Creature.
+- **Memory angel (Mnemosyne, v0.13+)** projects the full stream into Mnemosyne's narrative store, summarizing locally before upload (so Mnemosyne sees rolled-up signal, not a firehose of raw events). Mandatory once Mnemosyne ships.
+- **Future angels** for other gods project their own slices.
+
+Single time source, single `event_id` namespace (UUIDv7 — sortable, embeds ms-precision timestamp), single envelope schema. Cross-referencing audit and narrative is a one-field `JOIN ON event_id`.
+
+In v0.11, the audit angel is implemented as in-process Enkidu code that projects the feed into today's audit log. No process isolation yet. v0.13 (alongside Mnemosyne) promotes both audit and memory angels to real out-of-process angels with full opacity guarantees.
+
+#### Mortals (instances — no fixed list)
+
+Mortals are not enumerated in the charter — they come and go. They are listed via `demiurge hire list`. Examples that exist or are obvious near-term:
+
+- `email_pm` — inbox triage Mortal (currently in core; moves to plugin form in v0.11).
 - `installer` — system-package installer Mortal; proposes plans for Enkidu to execute.
-- subject agents (`berwyn_deal`, etc.) — cross-channel Mortals per topic.
+- subject Mortals (`berwyn_deal`, etc.) — cross-channel per-topic.
 
 The migration of `email_pm` and `installer` from in-tree code to entry-point plugins is part of v0.11; today they're co-located with the core for convenience, but architecturally they have always been Mortals.
 
@@ -93,8 +157,8 @@ Added in this document:
 9. **Testable or declared untestable.** Every change ships with a test plan; if a change can't be meaningfully tested (external API, UI), we say so out loud and compensate with manual verification steps and observability.
 10. **Context and memory are load-bearing.** Demiurge's long-term value compounds through what it remembers. Memory is structured, scoped, redacted, and auditable — not a pile of prompt strings. (§4, to be detailed.)
 11. **Agents are narrow.** Each agent sees only what it strictly needs to do its job: its own tool list (filtered via `skills.registry`), its own playbooks, its own subscription topics, its own scoped DB rows. No agent has a broad system view. Cross-agent communication is the bus (asynchronous) or Enkidu (synchronous, brokered) — never direct imports. The blast radius of any single compromised agent is bounded by its narrow surface. Operationalized in `docs/architecture/agent-isolation.md`.
-12. **Two tiers — Pantheon and Mortals.** Demiurge is a small **Pantheon** of permanent core services (Enkidu, Arachne, Sphinx, Janus, future Mnemosyne + Iris) plus a population of **Mortals** — task/project/domain agents spawned on demand. Pantheon members face inward and are depended on; Mortals face outward and depend on the Pantheon. The boundary rule is hard: **nothing in the Pantheon depends on a Mortal.** When a Mortal-shaped capability turns out to be needed across many tasks, it is *promoted* (Apotheosis) into the Pantheon. Architecture writeup: `docs/architecture/pantheon.md`.
-13. **Plugins, not monoliths.** Channels and Mortals are independently installable plugins (pip-installable packages discovered via Python entry points). Demiurge core ships only the Pantheon, the plugin loader, the plugin runtime, and a registry of available plugins. Adding a channel or hiring a Mortal is `demiurge channels install <name>` / `demiurge hire spawn <spec>` — never a code change in core.
+12. **Three layers — Demiurge, the Pantheon, the Creatures.** Demiurge is the substrate (not a god — Platonic, pre-Olympian craftsman). The **Pantheon** is the small set of named gods (Enkidu, Arachne, Sphinx, Janus, planned Hephaestus + Hades + Mnemosyne + Iris + Zeus) with stable code identifiers. The **Creatures** are forged on demand: **Mortals** (full agency, LLM-driven), **Beasts** (model-driven, no agency — image generators, summarizers, classifiers), **Automatons** (deterministic, no LLM — schedulers, pollers, log shippers), and **Angels** (god-extensions; opaque to all Creatures and to Sol). Pantheon members face inward and are depended on; Creatures face outward and depend on the Pantheon. The boundary rule is hard: **nothing in the Pantheon depends on a Creature.** When a Creature-shaped capability turns out to be needed across many tasks, it is *promoted* (Apotheosis) into the Pantheon. Architecture writeup: `docs/architecture/pantheon.md`.
+13. **Plugins, not monoliths.** Powers (formerly "channels" — any external-world integration) and Mortals/Beasts/Automatons are independently installable plugins (pip-installable packages discovered via Python entry points). Demiurge core ships only the Pantheon, the plugin loader, the plugin runtime, and a registry of available plugins. Adding a power or hiring a Creature is `demiurge powers install <name>` / `demiurge hire spawn <spec>` — never a code change in core.
 14. **No passwordless root-equivalent on the Demiurge host.** No account that runs Demiurge or any of its agents may be in the `docker` group, may have NOPASSWD sudo, or may otherwise reach root without a password challenge. This rules out the `usermod -aG docker $USER` install pattern entirely; native daemons (apt-installed Postgres, systemd user units) are the default. Where containerization is needed, rootless mode is the only acceptable form. (Locked 2026-05-02 after the docker-group escalation discussion.)
 
 ---

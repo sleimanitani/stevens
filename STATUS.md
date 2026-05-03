@@ -125,7 +125,7 @@ Six steps shipped today + the cosmology lock-in:
 | ✓ | 6 | `5be7565` | `demiurge hire` CLI |
 | ✓ | 7.1 | `966e930` | core process supervisor (subprocess lifecycle + backoff + pause/resume + logs) |
 | ✓ | 7.2 | `779ad67` | power-runtime integration (entry-point discovery → reactive plugins as supervised subprocesses + polling tasks) |
-| ⏳ | 7.3 | — | Creature-runtime integration + audit-angel observation + real `demiurge hire pause/resume` |
+| ✓ | 7.3 | _pending_ | Creature-runtime integration + audit-angel observation (real `demiurge hire pause/resume` defers to 7.4 — needs IPC) |
 | ⏳ | 7.4 | — | systemd user unit `demiurge-runtime.service` + `demiurge runtime` CLI surface |
 | ⏳ | 8 | — | migrate channels → powers |
 | ⏳ | 9 | — | migrate Mortals to plugins |

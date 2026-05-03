@@ -14,6 +14,10 @@ Submodules (incremental landing across v0.11 step 3):
   `forge_beast`, `forge_automaton`. Coming next.
 """
 
+from .audit_angel import (  # noqa: F401
+    AuditAngel,
+    feed_event_to_audit_entry,
+)
 from .forge import (  # noqa: F401
     ForgeAction,
     ForgeError,

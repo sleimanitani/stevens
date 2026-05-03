@@ -88,9 +88,14 @@ def provision_agent(
     presets_dir: Optional[Path] = None,
 ) -> ProvisionResult:
     """Provision a new agent end-to-end. See module docstring."""
-    if not name.replace("_", "").isalnum():
+    # Names allow snake_case alnum plus dots so v0.11 Mortal creature_ids
+    # (`<manifest>.<instance>`, e.g. ``email_pm.personal``) work without
+    # an extra rename layer. Dots are already a normal separator in
+    # capability names (`gmail.send`) and don't introduce shell-unsafety
+    # — file path components, yaml keys, env-var values all handle them.
+    if not name.replace("_", "").replace(".", "").isalnum() or not name:
         raise ProvisionError(
-            f"agent name must be snake_case alnum, got {name!r}"
+            f"agent name must be snake_case alnum (with dots), got {name!r}"
         )
 
     agents_dir = agents_dir or default_agents_dir()

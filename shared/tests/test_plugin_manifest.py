@@ -179,7 +179,54 @@ runtime:
 capabilities: []
 bootstrap: x:hire
 """
-    with pytest.raises(ManifestError, match="mortal.*modes"):
+    with pytest.raises(ManifestError, match=r"(mortal|Creature).*modes"):
+        load_manifest_from_text(yaml_text)
+
+
+def test_beast_kind_accepted():
+    """v0.11 step 3e.1 extended the kind literal to include 'beast'."""
+    yaml_text = """\
+name: image_gen
+kind: beast
+display_name: Image Generator
+version: "1.0"
+capabilities:
+  - image.generate
+"""
+    m = load_manifest_from_text(yaml_text)
+    assert m.kind == "beast"
+    assert m.modes is None
+
+
+def test_automaton_kind_accepted():
+    """v0.11 step 3e.1 extended the kind literal to include 'automaton'."""
+    yaml_text = """\
+name: scheduler
+kind: automaton
+display_name: Scheduler
+version: "1.0"
+capabilities: []
+"""
+    m = load_manifest_from_text(yaml_text)
+    assert m.kind == "automaton"
+    assert m.modes is None
+
+
+def test_beast_with_modes_fails():
+    yaml_text = """\
+name: x
+kind: beast
+display_name: X
+version: "1.0"
+modes: [webhook]
+runtime:
+  webhook:
+    path: /x
+    port: 8080
+    handler: x.h:h
+capabilities: []
+"""
+    with pytest.raises(ManifestError, match=r"(beast|Creature).*modes"):
         load_manifest_from_text(yaml_text)
 
 
@@ -334,7 +381,7 @@ capabilities: []
 powers: [other_power]
 bootstrap: x:install
 """
-    with pytest.raises(ManifestError, match="powers.*Mortal-only"):
+    with pytest.raises(ManifestError, match="powers.*Creature-only"):
         load_manifest_from_text(yaml_text)
 
 

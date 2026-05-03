@@ -83,7 +83,15 @@ class Mode(str, Enum):
 REACTIVE_MODES = frozenset({Mode.WEBHOOK, Mode.LISTENER, Mode.POLLING})
 
 
-PowerKind = Literal["power", "mortal"]
+PowerKind = Literal["power", "mortal", "beast", "automaton"]
+"""Manifest kinds supported in v0.11.
+
+The DEMIURGE.md cosmology defines four Creature kinds + Powers; this
+literal is the surface every plugin manifest declares. Originally just
+``power | mortal`` in step 1; extended in step 3e.1 with `beast` and
+`automaton` once the cosmology lock-in (2026-05-03) made the four-kind
+taxonomy load-bearing.
+"""
 
 
 # ----------------------------- runtime sub-blocks --------------------------
@@ -237,15 +245,15 @@ class Manifest(BaseModel):
                 raise ManifestError("power: 'modes' is required and non-empty")
             if len(set(self.modes)) != len(self.modes):
                 raise ManifestError(f"power: duplicate modes in {self.modes}")
-        else:  # mortal
+        else:  # mortal | beast | automaton — Creatures, not Powers
             if self.modes is not None:
                 raise ManifestError(
-                    "mortal: 'modes' must not be set (Mortals are agents, "
-                    "not external integrations)"
+                    f"{self.kind}: 'modes' must not be set (Creatures are "
+                    f"forged on demand, not external integrations)"
                 )
             if self.runtime is not None:
                 raise ManifestError(
-                    "mortal: 'runtime' must not be set (use 'bootstrap' instead)"
+                    f"{self.kind}: 'runtime' must not be set (use 'bootstrap' instead)"
                 )
         return self
 
@@ -288,9 +296,15 @@ class Manifest(BaseModel):
 
     @model_validator(mode="after")
     def _validate_powers_field(self) -> "Manifest":
+        # `powers` declares "this Creature depends on these Powers being
+        # installed." Mortals naturally use it; Beasts may use it (e.g. an
+        # image_gen Beast that calls an upstream API via web.fetch);
+        # Automatons rarely need it but we allow it. Powers themselves
+        # cannot use it — Powers don't depend on other Powers via this field.
         if self.kind == "power" and self.powers is not None:
             raise ManifestError(
-                "power: 'powers' field is Mortal-only (powers can't declare power deps via this field)"
+                "power: 'powers' field is Creature-only (powers can't "
+                "declare power deps via this field)"
             )
         return self
 

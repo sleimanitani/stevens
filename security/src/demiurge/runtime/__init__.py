@@ -20,6 +20,11 @@ or forge results. Higher layers (7.2+) translate forged-state into
 ``SupervisedProcess`` records and hand them to the supervisor.
 """
 
+from .power_runtime import (  # noqa: F401
+    PowerRuntime,
+    PowerRuntimeError,
+    PowerRuntimeRegistration,
+)
 from .supervisor import (  # noqa: F401
     BackoffPolicy,
     ProcessNotFound,

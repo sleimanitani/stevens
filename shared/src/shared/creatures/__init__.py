@@ -22,6 +22,14 @@ from .base import (  # noqa: F401
     Creature,
     Mortal,
 )
+from .dispatch import (  # noqa: F401
+    AngelCommissionResult,
+    BlessingResult,
+    MockGod,
+    collect_angel_commissions,
+    collect_blessings,
+    route_capability,
+)
 from .context import (  # noqa: F401
     AngelContext,
     AutomatonContext,

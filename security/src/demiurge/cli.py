@@ -878,6 +878,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_powers_parser(top)
 
+    # hire — v0.11 Creature lifecycle (Mortals, Beasts, Automatons)
+    from .cli_hire import add_hire_parser
+
+    add_hire_parser(top)
+
     # channels — deprecated alias for `powers`. Kept through v0.11 for
     # muscle-memory continuity; v0.12 may drop it.
     chs = top.add_parser(

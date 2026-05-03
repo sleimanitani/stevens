@@ -25,6 +25,12 @@ from .creature_runtime import (  # noqa: F401
     CreatureRuntimeError,
     CreatureRuntimeRegistration,
 )
+from .daemon import (  # noqa: F401
+    RuntimeDaemon,
+    default_socket_path,
+    send_request,
+    send_request_async,
+)
 from .power_runtime import (  # noqa: F401
     PowerRuntime,
     PowerRuntimeError,

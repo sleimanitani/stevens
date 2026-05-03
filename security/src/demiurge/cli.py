@@ -883,6 +883,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_hire_parser(top)
 
+    # runtime — v0.11 long-lived supervisor daemon
+    from .cli_runtime import add_runtime_parser
+
+    add_runtime_parser(top)
+
     # channels — deprecated alias for `powers`. Kept through v0.11 for
     # muscle-memory continuity; v0.12 may drop it.
     chs = top.add_parser(

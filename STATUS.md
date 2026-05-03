@@ -126,7 +126,11 @@ Six steps shipped today + the cosmology lock-in:
 | ✓ | 7.1 | `966e930` | core process supervisor (subprocess lifecycle + backoff + pause/resume + logs) |
 | ✓ | 7.2 | `779ad67` | power-runtime integration (entry-point discovery → reactive plugins as supervised subprocesses + polling tasks) |
 | ✓ | 7.3 | `ee82bfe` | Creature-runtime integration + audit-angel observation (real `demiurge hire pause/resume` defers to 7.4 — needs IPC) |
-| ⏳ | 7.4 | — | systemd user unit `demiurge-runtime.service` + `demiurge runtime` CLI surface |
+| ✓ | 7.4 | _pending_ | runtime daemon (`python -m demiurge.runtime`) + UDS IPC + `demiurge runtime` CLI + real `demiurge hire pause/resume` |
+| ⏳ | 8 | — | migrate channels → powers (move gmail/calendar/whatsapp-cloud/signal to plugins/) |
+| ⏳ | 9 | — | migrate Mortals to plugins (email_pm + installer; ship real Mortal main) |
+| ⏳ | 10 | — | runbook overhaul |
+| ⏳ | 11 | — | acceptance gate |
 | ⏳ | 8 | — | migrate channels → powers |
 | ⏳ | 9 | — | migrate Mortals to plugins |
 | ⏳ | 10 | — | runbook overhaul |

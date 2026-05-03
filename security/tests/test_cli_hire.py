@@ -450,18 +450,76 @@ def test_hire_retire_uses_kind_from_discovered_manifest(tmp_path: Path, monkeypa
 # ----------------------------- pause / resume stubs ----------------------
 
 
-def test_hire_pause_is_stub(capsys):
+def test_hire_pause_when_daemon_not_running(capsys, tmp_path: Path, monkeypatch):
+    """Daemon down → clear error and rc=1."""
+    monkeypatch.setattr(
+        "demiurge.runtime.daemon.default_socket_path",
+        lambda: tmp_path / "missing.sock",
+    )
     rc = cmd_hire_pause(_args(creature_id="x"))
     err = capsys.readouterr().err
-    assert rc == 2
-    assert "not wired yet" in err
+    assert rc == 1
+    assert "runtime daemon is not running" in err
 
 
-def test_hire_resume_is_stub(capsys):
+def test_hire_resume_when_daemon_not_running(capsys, tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(
+        "demiurge.runtime.daemon.default_socket_path",
+        lambda: tmp_path / "missing.sock",
+    )
     rc = cmd_hire_resume(_args(creature_id="x"))
     err = capsys.readouterr().err
-    assert rc == 2
-    assert "not wired yet" in err
+    assert rc == 1
+    assert "runtime daemon is not running" in err
+
+
+def test_hire_pause_when_daemon_responds_ok(monkeypatch, capsys):
+    """Daemon ok-response → rc=0 + 'paused …' message."""
+
+    def fake_send(req, **kw):
+        return {"ok": True, "data": {"creature_id": req["creature_id"], "paused": True}}
+
+    monkeypatch.setattr("demiurge.cli_hire.send_request", fake_send, raising=False)
+    # cli_hire imports send_request lazily inside _send_runtime_request,
+    # so we patch at the import location used there.
+    import demiurge.runtime.daemon as daemon_mod
+
+    monkeypatch.setattr(daemon_mod, "send_request", fake_send)
+
+    rc = cmd_hire_pause(_args(creature_id="email_pm.personal"))
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "paused email_pm.personal" in out
+
+
+def test_hire_resume_when_daemon_responds_ok(monkeypatch, capsys):
+    def fake_send(req, **kw):
+        return {"ok": True, "data": {"creature_id": req["creature_id"], "resumed": True}}
+
+    import demiurge.runtime.daemon as daemon_mod
+
+    monkeypatch.setattr(daemon_mod, "send_request", fake_send)
+
+    rc = cmd_hire_resume(_args(creature_id="email_pm.personal"))
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "resumed email_pm.personal" in out
+
+
+def test_hire_pause_when_daemon_refuses(monkeypatch, capsys):
+    """Daemon error response → rc=1 + error from daemon."""
+
+    def fake_send(req, **kw):
+        return {"ok": False, "error": "creature not found"}
+
+    import demiurge.runtime.daemon as daemon_mod
+
+    monkeypatch.setattr(daemon_mod, "send_request", fake_send)
+
+    rc = cmd_hire_pause(_args(creature_id="ghost.thing"))
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "creature not found" in err
 
 
 # ----------------------------- top-level argparse ------------------------

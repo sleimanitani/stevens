@@ -373,25 +373,45 @@ def cmd_hire_retire(args: argparse.Namespace) -> int:
 # ----------------------------- pause / resume (deferred) -----------------
 
 
+def _send_runtime_request(op: str, creature_id: str) -> int:
+    """Shared CLI helper: connect to the runtime daemon's UDS and dispatch."""
+    from .runtime.daemon import default_socket_path, send_request
+
+    sock = default_socket_path()
+    try:
+        resp = send_request({"op": op, "creature_id": creature_id}, socket_path=sock)
+    except (ConnectionRefusedError, FileNotFoundError):
+        print(
+            f"runtime daemon is not running (no socket at {sock}).\n"
+            f"start it with: systemctl --user start demiurge-runtime",
+            file=sys.stderr,
+        )
+        return 1
+    if not resp.get("ok"):
+        print(f"daemon refused: {resp.get('error')}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_hire_pause(args: argparse.Namespace) -> int:
-    """v0.11 stub — no supervisor yet (lands in step 7)."""
-    print(
-        f"(stub) `demiurge hire pause {args.creature_id}` is not wired "
-        f"yet. Pause/resume require the runtime supervisor (v0.11 step 7).\n"
-        f"For now, retire + re-spawn is the only lifecycle control.",
-        file=sys.stderr,
-    )
-    return 2
+    """SIGTERM the Creature's process and block its restart.
+
+    Talks to the running ``demiurge-runtime`` daemon over its UDS.
+    The daemon's Supervisor.pause() does the actual signaling; this
+    CLI just relays the request.
+    """
+    rc = _send_runtime_request("pause", args.creature_id)
+    if rc == 0:
+        print(f"paused {args.creature_id}")
+    return rc
 
 
 def cmd_hire_resume(args: argparse.Namespace) -> int:
-    """v0.11 stub — no supervisor yet."""
-    print(
-        f"(stub) `demiurge hire resume {args.creature_id}` is not wired "
-        f"yet. Pause/resume require the runtime supervisor (v0.11 step 7).",
-        file=sys.stderr,
-    )
-    return 2
+    """Resume a paused Creature."""
+    rc = _send_runtime_request("resume", args.creature_id)
+    if rc == 0:
+        print(f"resumed {args.creature_id}")
+    return rc
 
 
 # ----------------------------- defaults helpers --------------------------

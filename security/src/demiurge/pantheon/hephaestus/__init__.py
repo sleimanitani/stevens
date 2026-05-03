@@ -14,6 +14,12 @@ Submodules (incremental landing across v0.11 step 3):
   `forge_beast`, `forge_automaton`. Coming next.
 """
 
+from .forge import (  # noqa: F401
+    ForgeAction,
+    ForgeError,
+    ForgeResult,
+    forge_power,
+)
 from .gods import (  # noqa: F401
     ArachneGod,
     EnkiduGod,

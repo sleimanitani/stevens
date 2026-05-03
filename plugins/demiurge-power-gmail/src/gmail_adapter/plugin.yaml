@@ -1,0 +1,37 @@
+name: gmail
+kind: power
+display_name: Gmail
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+modes: [webhook, request-based]
+
+runtime:
+  webhook:
+    path: /gmail/push
+    port: 8080
+    handler: gmail_adapter.main:app
+
+capabilities:
+  - gmail.send
+  - gmail.read
+  - gmail.draft
+  - gmail.label
+  - gmail.list_history
+  - gmail.get_message
+  - gmail.watch
+  - gmail.get_profile
+
+secrets:
+  - name: gmail.oauth_client.id
+    prompt: "Google OAuth client ID"
+    onboard_via: "demiurge wizard google"
+  - name: gmail.oauth_client.secret
+    prompt: "Google OAuth client secret"
+    onboard_via: "demiurge wizard google"
+
+system_deps:
+  apt: []
+
+bootstrap: gmail_adapter.bootstrap:install

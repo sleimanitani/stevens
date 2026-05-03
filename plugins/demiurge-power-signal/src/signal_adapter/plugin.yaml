@@ -1,0 +1,27 @@
+name: signal
+kind: power
+display_name: Signal
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+modes: [polling, request-based]
+
+runtime:
+  polling:
+    command: signal_adapter.poll:run_once
+    interval: 2s
+
+capabilities:
+  - signal.send
+  - signal.list_groups
+  - signal.subscribe
+
+secrets:
+  - name: signal.daemon_url
+    prompt: "URL of signal-cli-rest-api daemon (e.g. http://localhost:8084)"
+
+system_deps:
+  apt: []
+
+bootstrap: signal_adapter.bootstrap:install

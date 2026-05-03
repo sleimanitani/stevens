@@ -1,0 +1,29 @@
+name: whatsapp_cloud
+kind: power
+display_name: WhatsApp Cloud API
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+modes: [webhook, request-based]
+
+runtime:
+  webhook:
+    path: /whatsapp/webhook
+    port: 8082
+    handler: whatsapp_cloud_adapter.main:app
+
+capabilities:
+  - whatsapp_cloud.send_text
+  - whatsapp_cloud.send_template
+  - whatsapp_cloud.mark_read
+  - whatsapp_cloud.get_media
+
+secrets:
+  - name: whatsapp_cloud.app_secret
+    prompt: "Meta app secret"
+
+system_deps:
+  apt: []
+
+bootstrap: whatsapp_cloud_adapter.bootstrap:install

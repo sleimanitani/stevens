@@ -9,14 +9,24 @@ addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 
 [tool.uv.workspace]
-members = ["shared", "channels/gmail", "channels/whatsapp-cloud", "channels/calendar", "channels/signal", "agents", "security", "skills"]
+members = [
+    "shared",
+    "agents",
+    "security",
+    "skills",
+    # v0.11 plugins (formerly channels/<name>)
+    "plugins/demiurge-power-gmail",
+    "plugins/demiurge-power-calendar",
+    "plugins/demiurge-power-whatsapp-cloud",
+    "plugins/demiurge-power-signal",
+]
 
 [tool.uv.sources]
 shared = { workspace = true }
-gmail-adapter = { workspace = true }
-whatsapp-cloud-adapter = { workspace = true }
-calendar-adapter = { workspace = true }
 agents = { workspace = true }
 demiurge = { workspace = true }
 skills = { workspace = true }
-signal-adapter = { workspace = true }
+"demiurge-power-gmail" = { workspace = true }
+"demiurge-power-calendar" = { workspace = true }
+"demiurge-power-whatsapp-cloud" = { workspace = true }
+"demiurge-power-signal" = { workspace = true }

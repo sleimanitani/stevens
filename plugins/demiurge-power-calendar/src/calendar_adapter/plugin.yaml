@@ -1,0 +1,34 @@
+name: calendar
+kind: power
+display_name: Google Calendar
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+modes: [webhook, request-based]
+
+runtime:
+  webhook:
+    path: /calendar/push
+    port: 8083
+    handler: calendar_adapter.main:app
+
+capabilities:
+  - calendar.list_events
+  - calendar.create_event
+  - calendar.update_event
+  - calendar.delete_event
+  - calendar.watch
+
+secrets:
+  - name: calendar.oauth_client.id
+    prompt: "Google OAuth client ID"
+    onboard_via: "demiurge wizard google"
+  - name: calendar.oauth_client.secret
+    prompt: "Google OAuth client secret"
+    onboard_via: "demiurge wizard google"
+
+system_deps:
+  apt: []
+
+bootstrap: calendar_adapter.bootstrap:install

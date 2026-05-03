@@ -127,7 +127,7 @@ Six steps shipped today + the cosmology lock-in:
 | ✓ | 7.2 | `779ad67` | power-runtime integration (entry-point discovery → reactive plugins as supervised subprocesses + polling tasks) |
 | ✓ | 7.3 | `ee82bfe` | Creature-runtime integration + audit-angel observation (real `demiurge hire pause/resume` defers to 7.4 — needs IPC) |
 | ✓ | 7.4 | `4c1eddf` | runtime daemon (`python -m demiurge.runtime`) + UDS IPC + `demiurge runtime` CLI + real `demiurge hire pause/resume` |
-| ⏳ | 8 | — | migrate channels → powers (move gmail/calendar/whatsapp-cloud/signal to plugins/) |
+| ✓ | 8 | _pending_ | migrate channels → powers — gmail/calendar/whatsapp-cloud/signal moved to `plugins/demiurge-power-<name>/`. Each has plugin.yaml + manifest() entry-point + bootstrap stub. Discovery finds all 4; `demiurge powers list` shows them. |
 | ⏳ | 9 | — | migrate Mortals to plugins (email_pm + installer; ship real Mortal main) |
 | ⏳ | 10 | — | runbook overhaul |
 | ⏳ | 11 | — | acceptance gate |

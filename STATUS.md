@@ -79,46 +79,59 @@
 
 ## Up next
 
-**v0.10-bootstrap is complete** (2026-05-02). The new install path is `uv run demiurge bootstrap` → run the printed sudo block → re-run bootstrap → `demiurge secrets init` → `systemctl --user start demiurge-security`. Native Postgres 16 + systemd user units, no docker.
+### Resume the session
 
-**v0.10.1 (Demiurge rename) and v0.10.2 (Hephaestus + Hades into the Pantheon) shipped 2026-05-02.** "Stevens" → "Demiurge" across code + docs + paths + env vars + units. Two new Pantheon members declared: Hephaestus (`forge` — creator) and Hades (`underworld` — destroyer/archivist). Lifecycle vocabulary now has explicit executors.
+To pick up where the previous session ended, in order:
 
-**Active milestone: `v0.11-plugins`** — see `plans/v0.11-plugins.md`. Vocabulary lock-in: "channels" → **powers** (any external-world integration regardless of mechanism). Manifest's `modes:` field declares one or more of webhook / listener / polling / request-based; `runtime:` block declares the artifact shape Hephaestus generates. Step 1 (manifest schema + parser) shipped 2026-05-02.
+1. Read **this file** (you are here). Skip down to "Where to start (next step)" below.
+2. Read **`plans/v0.11-plugins.md`**. Steps 1–6 are marked `[x]` with full Outcome blocks; step 7 is the next `[ ]` todo.
+3. Verify the workspace is in the expected state:
 
-**Step 1 shipped** (`d373d74`, 2026-05-02): `shared.plugins.manifest` with the full Pydantic model + 22 unit tests.
+   ```bash
+   git status              # should be clean, on main, up-to-date with origin
+   DATABASE_URL=postgresql:///assistant uv run pytest    # should be 959 passed, 2 skipped
+   uv run demiurge --help  # the renamed CLI works (Stevens → Demiurge happened in v0.10.1)
+   ```
 
-**Step 2 shipped** (`a2ff475`, 2026-05-03): `shared.plugins.discovery`.
+4. If anything in step 3 is off, **the docs are wrong, not the code** — investigate and correct the docs before continuing.
 
-**Step 3 design locked** (`923a548`, 2026-05-03): three-layer cosmology, four creature kinds, full Pantheon roster. See DEMIURGE.md §1.1 + docs/architecture/gods.md + docs/architecture/pantheon.md.
+### Where to start (next step)
 
-**Step 3a shipped** (`93c01b1`, 2026-05-03): `shared.creatures` package.
+**v0.11-plugins step 7** — runtime supervisor. `demiurge_runtime` daemon (its own systemd user unit). Scans plugin entry points at startup, starts each reactive plugin as a subprocess per its `runtime:` block, supervises with restart-on-failure backoff. Replaces the hardcoded 6-unit catalog from v0.10 step 3 — Hephaestus generates the units from manifests; runtime supervises them. This is also where the deferred-stub `demiurge hire pause`/`resume` commands and the real audit-angel observer-loop get a home.
 
-**Step 3b shipped** (`0e10a8d`, 2026-05-03): blessing dispatcher.
+Step 7 is a substantial step (process management, async event loop, file tailing for angel observation, signal handling, restart backoff). Worth splitting into 7.1 / 7.2 / etc when you start, similar to how step 3e was split into 3e.1–3e.4.
 
-**Step 3c shipped** (`145cae5`, 2026-05-03): tool routing + EnkiduGod adapter + per-god stubs + BlessedToolWrapper + forge_blessed_registry composer.
+After step 7: step 8 (migrate channels → powers), step 9 (migrate Mortals from in-tree code to plugins), step 10 (runbook overhaul), step 11 (acceptance gate). All are more mechanical than 7.
 
-**Step 3d shipped** (`bba048a`, 2026-05-03): `forge_power(manifest)`.
+### v0.11 progress (2026-05-03 close)
 
-**Step 3e split** into 3e.1–3e.4 for shipping in focused commits.
+Six steps shipped today + the cosmology lock-in:
 
-**Step 3e.1 shipped** (`8e90b96`, 2026-05-03): manifest schema extension + `forge_mortal`.
+| | step | commit | what |
+|---|---|---|---|
+| ✓ | 1 | `d373d74` | plugin manifest schema + parser |
+| ✓ | 2 | `a2ff475` | entry-point discovery |
+| ✓ | 3 (design) | `923a548` | three-layer cosmology + four creature kinds + full Pantheon roster |
+| ✓ | 3a | `93c01b1` | `shared.creatures` package |
+| ✓ | 3b | `0e10a8d` | blessing dispatcher + GodlyBlessing |
+| ✓ | 3c | `145cae5` | tool routing + EnkiduGod + per-god stubs + BlessedToolWrapper |
+| ✓ | 3d | `bba048a` | `forge_power(manifest)` |
+| ✓ | 3e.1 | `8e90b96` | manifest extension (Beast/Automaton) + `forge_mortal` |
+| ✓ | 3e.2 | `33d89d0` | `forge_beast` + `forge_automaton` |
+| ✓ | 3e.3 | `a0c2529` | audit-angel placeholder (first real Angel impl) |
+| ✓ | 3e.4 | `5af578d` | scheduler Automaton |
+| ✓ | 4 | `26ecb99` | Hades archive functions |
+| ✓ | 5 | `aa32e01` | `demiurge powers` CLI |
+| ✓ | 6 | `5be7565` | `demiurge hire` CLI |
+| ⏳ | 7 | — | runtime supervisor |
+| ⏳ | 8 | — | migrate channels → powers |
+| ⏳ | 9 | — | migrate Mortals to plugins |
+| ⏳ | 10 | — | runbook overhaul |
+| ⏳ | 11 | — | acceptance |
 
-**Step 3e.2 shipped** (`33d89d0`, 2026-05-03): `forge_beast` + `forge_automaton`.
+### After v0.11
 
-**Step 3e.3 shipped** (`a0c2529`, 2026-05-03): audit-angel placeholder.
-
-**Step 3e.4 shipped** (`5af578d`, 2026-05-03): real `scheduler` Automaton.
-
-**Step 4 shipped** (`26ecb99`, 2026-05-03): Hades (underworld) archive functions.
-
-**Step 5 shipped** (`aa32e01`, 2026-05-03): `demiurge powers` CLI.
-
-**Step 6 shipped** (this commit, 2026-05-03): `demiurge hire` CLI for Creature lifecycle. List/registry/show/spawn/install/retire all working; pause/resume deferred to step 7.
-
-**Next: step 7** — runtime supervisor. `demiurge_runtime` daemon (a systemd user unit). Scans plugin entry points at startup, starts each reactive plugin as a subprocess per its `runtime:` block, supervises with restart-on-failure backoff. Replaces the hardcoded 6-unit catalog from v0.10 step 3 — Hephaestus generates the units from manifests; runtime supervises them. This is also where pause/resume + the audit-angel observer get a real home.
-
-**After v0.11:**
-- **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory and dialogue surfaces instead of inventing them per-Mortal.
+- **v0.12-pantheon-expansion** — Mnemosyne (memory + pgvector) and Iris (user-facing persona) join the Pantheon. Mortals get clean memory + dialogue surfaces instead of inventing them per-Mortal.
 
 ## v0.10 deferred follow-ups (non-blocking)
 
@@ -144,9 +157,44 @@ Onboarding procedures (current; **will be replaced by `demiurge channels install
 
 ## Housekeeping (non-blocking)
 
-- Local git `user.email` unset; currently passed as `git -c user.email=s@y76.io ...` per commit. Sol can set permanently whenever.
 - `assistant_prd_trd.docx` (repo root) and `docs/prd.docx` appear to duplicate. Dedupe when convenient.
 - google.api_core emits a FutureWarning that Python 3.10 support ends 2026-10-04. If Demiurge is still on 3.10 by then, bump `requires-python`.
+
+## Code layout snapshot (key v0.11 additions)
+
+For a fresh session, the v0.11 code lives in:
+
+```
+shared/src/shared/plugins/
+├── manifest.py             # Manifest, Mode, RuntimeBlock, SecretSpec, load_manifest_from_*
+└── discovery.py            # discover(kind), InstalledPlugin, DiscoveryResult, DiscoveryError
+
+shared/src/shared/creatures/
+├── base.py                 # Creature ABC + Mortal/Beast/Automaton/Angel
+├── context.py              # CreatureContext + per-kind frozen contexts
+├── feed.py                 # ObservationFeed (UUIDv7 + fcntl-locked appends)
+├── tools.py                # Blessing/Denial/ToolRegistry consumer types + with_context
+├── universal.py            # think + mortal.return universal tools
+└── dispatch.py             # collect_blessings, collect_angel_commissions, MockGod
+
+security/src/demiurge/pantheon/
+├── hephaestus/
+│   ├── gods.py             # EnkiduGod (real) + ArachneGod/SphinxGod/JanusGod (blanket)
+│   │                       # + IrisStubGod/MnemosyneStubGod/ZeusStubGod (stubs)
+│   ├── tool_routing.py     # DEFAULT_ROUTES + BlessedToolWrapper + forge_blessed_registry
+│   ├── audit_angel.py      # AuditAngel (first Angel ABC impl) + feed→AuditEntry projection
+│   └── forge.py            # forge_power, forge_mortal, forge_beast, forge_automaton
+└── hades/
+    └── archive.py          # archive_power, archive_mortal/beast/automaton, plus stubs
+                            # for fade/exile/ragnarok Pantheon-member transitions
+
+security/src/demiurge/creatures/
+└── scheduler.py            # the Scheduler Automaton (proves the kind end-to-end)
+
+security/src/demiurge/cli_powers.py    # demiurge powers list/registry/show/install/uninstall
+security/src/demiurge/cli_hire.py      # demiurge hire list/registry/show/spawn/install/retire
+                                       # + pause/resume stubs (deferred to step 7)
+```
 
 ## Blockers
 

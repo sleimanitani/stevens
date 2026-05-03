@@ -873,13 +873,19 @@ def build_parser() -> argparse.ArgumentParser:
     rst.add_argument("--keep-pdf-corpus", action="store_true")
     rst.set_defaults(fn=cmd_reset)
 
-    # channels — discoverability for the new-user experience
+    # powers — v0.11 plugin-aware integration management
+    from .cli_powers import add_powers_parser, cmd_channels_list_deprecated
+
+    add_powers_parser(top)
+
+    # channels — deprecated alias for `powers`. Kept through v0.11 for
+    # muscle-memory continuity; v0.12 may drop it.
     chs = top.add_parser(
-        "channels", help="discover channels you can onboard",
+        "channels", help="discover channels (deprecated alias of `powers`)",
     )
     chs_sub = chs.add_subparsers(dest="subcmd", required=True)
-    chs_list = chs_sub.add_parser("list", help="print the channel registry")
-    chs_list.set_defaults(fn=cmd_channels_list)
+    chs_list = chs_sub.add_parser("list", help="(deprecated) print the channel registry")
+    chs_list.set_defaults(fn=cmd_channels_list_deprecated)
 
     # janus — operator-assisted browser automation
     cha = top.add_parser(

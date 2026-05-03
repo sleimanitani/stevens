@@ -18,6 +18,8 @@ from .forge import (  # noqa: F401
     ForgeAction,
     ForgeError,
     ForgeResult,
+    forge_automaton,
+    forge_beast,
     forge_mortal,
     forge_power,
 )

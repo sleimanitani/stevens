@@ -390,6 +390,154 @@ def _create_pg_schema_if_configured(
     return True, None
 
 
+async def _forge_creature(
+    manifest: Manifest,
+    *,
+    expected_kind: str,
+    schema_prefix: str,
+    instance_id: str,
+    repo_root: Path,
+    agents_yaml: Path,
+    capabilities_yaml: Path,
+    gods: Optional[Mapping[str, GodlyBlessing]],
+    dispatchers: Optional[Mapping[str, GodDispatcher]],
+    routes: Mapping[str, str],
+    feed_base: Optional[Path],
+    agents_dir: Optional[Path],
+    socket_path: str,
+    create_pg_schema: bool,
+    skip_bootstrap_hook: bool,
+    force: bool,
+) -> ForgeResult:
+    """Shared implementation for ``forge_mortal`` / ``forge_beast`` /
+    ``forge_automaton``.
+
+    All three Creature kinds go through the same forge: agent identity +
+    policy block + ToolRegistry + observation feed + per-Creature
+    Postgres schema (best-effort) + bootstrap hook. The differences are
+    in what's *missing* downstream — the supervisor (step 7) builds a
+    different Context type per kind, but the artifact production is
+    identical.
+
+    - Mortals get a MortalContext (llm + tools + memory + bus).
+    - Beasts get a BeastContext (model only).
+    - Automatons get an AutomatonContext (bus only).
+
+    Hephaestus produces the artifacts here; the supervisor consumes them.
+    """
+    if manifest.kind != expected_kind:
+        raise ForgeError(
+            f"forge_{expected_kind}: expected manifest kind={expected_kind!r}, "
+            f"got {manifest.kind!r}"
+        )
+
+    if gods is None or dispatchers is None:
+        raise ForgeError(
+            f"forge_{expected_kind}: must supply both 'gods' and 'dispatchers'. "
+            f"Caller (typically `demiurge hire spawn`) is responsible for "
+            f"the per-deployment binding."
+        )
+
+    notes: list[str] = []
+    creature_id = _build_creature_id(manifest.name, instance_id)
+    pg_schema_full = f"{schema_prefix}_{creature_id.replace('.', '_')}"
+
+    # 3. Write policy block.
+    preset = _manifest_to_preset(manifest, creature_id)
+    try:
+        policy_changed = merge_into_capabilities(
+            capabilities_yaml, creature_id, preset
+        )
+    except Exception as e:  # noqa: BLE001 — surface PresetError too
+        raise ForgeError(
+            f"failed to write policy block for {creature_id!r}: {e}"
+        ) from e
+    if policy_changed:
+        notes.append(
+            f"policy block for {creature_id!r} merged into "
+            f"{capabilities_yaml.name}"
+        )
+
+    # 4. Provision agent identity.
+    try:
+        provision_result = provision_agent(
+            name=creature_id,
+            preset_name=None,
+            agents_yaml=agents_yaml,
+            capabilities_yaml=capabilities_yaml,
+            agents_dir=agents_dir,
+            socket_path=socket_path,
+            force=force,
+        )
+    except Exception as e:  # noqa: BLE001
+        raise ForgeError(
+            f"agent identity provisioning failed for {creature_id!r}: {e}"
+        ) from e
+
+    # 5. Reload Enkidu's policy view + collect blessings.
+    enkidu_god = gods.get("enkidu")
+    if isinstance(enkidu_god, EnkiduGod):
+        from ...policy import load_policy
+
+        enkidu_god.policy = load_policy(capabilities_yaml)
+
+    blessing_result = await collect_blessings(
+        creature_id=creature_id,
+        capabilities=list(manifest.capabilities),
+        gods=dict(gods),
+        routes=routes,
+    )
+    if not blessing_result.ok:
+        raise ForgeError(
+            f"blessing collection failed for {creature_id!r}:\n"
+            f"{blessing_result.format_report()}"
+        )
+
+    # 6. Compose ToolRegistry. Universal tools included for Mortals; for
+    # Beasts/Automatons we still include them (no harm in `think`/`return`
+    # being available, even if they're rarely useful for non-agency
+    # creatures — Beasts don't have a monologue loop to think within, but
+    # `think` still produces a useful audit trace if invoked).
+    registry = forge_blessed_registry(
+        blessings=blessing_result.blessings,
+        dispatchers=dict(dispatchers),
+    )
+
+    # 7. Create observation feed.
+    feed = ObservationFeed(creature_id, base=feed_base)
+
+    # 8. Postgres schema (best-effort).
+    pg_schema: Optional[str] = None
+    if create_pg_schema:
+        ok, pg_note = _create_pg_schema_if_configured(pg_schema_full)
+        if ok:
+            pg_schema = pg_schema_full
+        if pg_note:
+            notes.append(pg_note)
+
+    # 9. Bootstrap hook (best-effort).
+    bootstrap_executed, bootstrap_note = await _run_bootstrap_hook(
+        manifest, dry_run=skip_bootstrap_hook
+    )
+    if bootstrap_note:
+        notes.append(bootstrap_note)
+
+    return ForgeResult(
+        creature_id=creature_id,
+        kind=expected_kind,
+        systemd_units=[],
+        capabilities=list(manifest.capabilities),
+        bootstrap_executed=bootstrap_executed,
+        notes=notes,
+        agent_key_path=provision_result.key_path,
+        policy_written=True,
+        pg_schema=pg_schema,
+        registry=registry,
+        feed_path=feed.path,
+        angel_specs=[],
+    )
+
+
 async def forge_mortal(
     manifest: Manifest,
     *,
@@ -438,120 +586,127 @@ async def forge_mortal(
     monologue loop here — that's the supervisor (v0.11 step 7). This
     function produces the artifacts; the supervisor consumes them.
     """
-    if manifest.kind != "mortal":
-        raise ForgeError(
-            f"forge_mortal: expected manifest kind='mortal', got {manifest.kind!r}"
-        )
-
-    notes: list[str] = []
-    creature_id = _build_creature_id(manifest.name, instance_id)
-    pg_schema_name = creature_id.replace(".", "_")
-    pg_schema_full = f"mortal_{pg_schema_name}"
-
-    # Default the gods / dispatchers if not supplied. Loaded lazily so a
-    # caller that wants pure Enkidu can pass a tighter set.
-    if gods is None or dispatchers is None:
-        # We don't auto-build a default god set here — the dispatcher
-        # binding is per-deployment (Enkidu UDS dispatcher, etc.). Failing
-        # loud is friendlier than silently constructing defaults that
-        # might not match the live deployment.
-        raise ForgeError(
-            "forge_mortal: must supply both 'gods' and 'dispatchers'. "
-            "Caller (typically `demiurge hire spawn`) is responsible for "
-            "the per-deployment binding."
-        )
-
-    # 3. Write policy block.
-    preset = _manifest_to_preset(manifest, creature_id)
-    try:
-        policy_changed = merge_into_capabilities(
-            capabilities_yaml, creature_id, preset
-        )
-    except Exception as e:  # noqa: BLE001 — surface PresetError too
-        raise ForgeError(
-            f"failed to write policy block for {creature_id!r}: {e}"
-        ) from e
-    if policy_changed:
-        notes.append(
-            f"policy block for {creature_id!r} merged into "
-            f"{capabilities_yaml.name}"
-        )
-
-    # 4. Provision agent identity.
-    try:
-        provision_result = provision_agent(
-            name=creature_id,
-            preset_name=None,  # we wrote the policy ourselves above
-            agents_yaml=agents_yaml,
-            capabilities_yaml=capabilities_yaml,
-            agents_dir=agents_dir,
-            socket_path=socket_path,
-            force=force,
-        )
-    except Exception as e:  # noqa: BLE001 — ProvisionError + anything else
-        raise ForgeError(
-            f"agent identity provisioning failed for {creature_id!r}: {e}"
-        ) from e
-
-    # 5. Collect blessings to verify the policy works.
-    # Reload Enkidu's policy view if the caller gave us an EnkiduGod —
-    # the policy file we just wrote needs to be visible to the
-    # bless() evaluator. Without this, the gods we were handed at the
-    # top of the function are looking at a pre-merge snapshot.
-    enkidu_god = gods.get("enkidu")
-    if isinstance(enkidu_god, EnkiduGod):
-        from ...policy import load_policy
-
-        enkidu_god.policy = load_policy(capabilities_yaml)
-
-    blessing_result = await collect_blessings(
-        creature_id=creature_id,
-        capabilities=list(manifest.capabilities),
-        gods=dict(gods),
+    return await _forge_creature(
+        manifest,
+        expected_kind="mortal",
+        schema_prefix="mortal",
+        instance_id=instance_id,
+        repo_root=repo_root,
+        agents_yaml=agents_yaml,
+        capabilities_yaml=capabilities_yaml,
+        gods=gods,
+        dispatchers=dispatchers,
         routes=routes,
-    )
-    if not blessing_result.ok:
-        raise ForgeError(
-            f"blessing collection failed for {creature_id!r}:\n"
-            f"{blessing_result.format_report()}"
-        )
-
-    # 6. Compose the ToolRegistry.
-    registry = forge_blessed_registry(
-        blessings=blessing_result.blessings,
-        dispatchers=dict(dispatchers),
+        feed_base=feed_base,
+        agents_dir=agents_dir,
+        socket_path=socket_path,
+        create_pg_schema=create_pg_schema,
+        skip_bootstrap_hook=skip_bootstrap_hook,
+        force=force,
     )
 
-    # 7. Create observation feed.
-    feed = ObservationFeed(creature_id, base=feed_base)
 
-    # 8. Postgres schema (best-effort).
-    pg_schema: Optional[str] = None
-    if create_pg_schema:
-        ok, pg_note = _create_pg_schema_if_configured(pg_schema_full)
-        if ok:
-            pg_schema = pg_schema_full
-        if pg_note:
-            notes.append(pg_note)
+# ----------------------------- forge_beast -------------------------------
 
-    # 9. Bootstrap hook (best-effort).
-    bootstrap_executed, bootstrap_note = await _run_bootstrap_hook(
-        manifest, dry_run=skip_bootstrap_hook
+
+async def forge_beast(
+    manifest: Manifest,
+    *,
+    instance_id: str,
+    repo_root: Path,
+    agents_yaml: Path,
+    capabilities_yaml: Path,
+    gods: Optional[Mapping[str, GodlyBlessing]] = None,
+    dispatchers: Optional[Mapping[str, GodDispatcher]] = None,
+    routes: Mapping[str, str] = DEFAULT_ROUTES,
+    feed_base: Optional[Path] = None,
+    agents_dir: Optional[Path] = None,
+    socket_path: str = "/run/demiurge/security.sock",
+    create_pg_schema: bool = True,
+    skip_bootstrap_hook: bool = False,
+    force: bool = False,
+) -> ForgeResult:
+    """Forge a Beast. Same pipeline as ``forge_mortal``; the difference
+    lives in the Context the supervisor (v0.11 step 7) builds — Beasts
+    get a ``BeastContext`` (model handle only, no LLM/memory/bus loop).
+
+    Beasts are stochastic Creatures with model output but no agency:
+    image generators, summarizers, embedders, classifiers, OCR, etc.
+    They're invoked function-style (``await beast.transform(input)``)
+    and don't run a monologue loop. Capabilities they declare are
+    typically upstream-API calls they need (e.g. an image_gen Beast
+    may need ``web.fetch`` to call its model provider).
+    """
+    return await _forge_creature(
+        manifest,
+        expected_kind="beast",
+        schema_prefix="beast",
+        instance_id=instance_id,
+        repo_root=repo_root,
+        agents_yaml=agents_yaml,
+        capabilities_yaml=capabilities_yaml,
+        gods=gods,
+        dispatchers=dispatchers,
+        routes=routes,
+        feed_base=feed_base,
+        agents_dir=agents_dir,
+        socket_path=socket_path,
+        create_pg_schema=create_pg_schema,
+        skip_bootstrap_hook=skip_bootstrap_hook,
+        force=force,
     )
-    if bootstrap_note:
-        notes.append(bootstrap_note)
 
-    return ForgeResult(
-        creature_id=creature_id,
-        kind="mortal",
-        systemd_units=[],  # supervisor (step 7) decides the runtime shape
-        capabilities=list(manifest.capabilities),
-        bootstrap_executed=bootstrap_executed,
-        notes=notes,
-        agent_key_path=provision_result.key_path,
-        policy_written=True,
-        pg_schema=pg_schema,
-        registry=registry,
-        feed_path=feed.path,
-        angel_specs=[],  # angel commissioning lands in 3e.3 alongside the audit-angel placeholder
+
+# ----------------------------- forge_automaton ---------------------------
+
+
+async def forge_automaton(
+    manifest: Manifest,
+    *,
+    instance_id: str,
+    repo_root: Path,
+    agents_yaml: Path,
+    capabilities_yaml: Path,
+    gods: Optional[Mapping[str, GodlyBlessing]] = None,
+    dispatchers: Optional[Mapping[str, GodDispatcher]] = None,
+    routes: Mapping[str, str] = DEFAULT_ROUTES,
+    feed_base: Optional[Path] = None,
+    agents_dir: Optional[Path] = None,
+    socket_path: str = "/run/demiurge/security.sock",
+    create_pg_schema: bool = True,
+    skip_bootstrap_hook: bool = False,
+    force: bool = False,
+) -> ForgeResult:
+    """Forge an Automaton. Same pipeline as ``forge_mortal``; the
+    difference lives in the Context the supervisor (v0.11 step 7)
+    builds — Automatons get an ``AutomatonContext`` (bus only, no
+    LLM/memory/model).
+
+    Automatons are deterministic, no-LLM Creatures invoked on a
+    schedule or by a bus event. Examples: scheduler, RSS poller, log
+    shipper. They typically declare a small set of capabilities (often
+    just ``bus.*`` to publish events) and have no agency.
+
+    Automatons still get a Postgres schema even though most don't need
+    persistent state — a stateful Automaton (e.g. a deduplicating
+    poller) will use it; stateless ones (the scheduler) leave it empty.
+    Cheap to create, no harm if unused.
+    """
+    return await _forge_creature(
+        manifest,
+        expected_kind="automaton",
+        schema_prefix="automaton",
+        instance_id=instance_id,
+        repo_root=repo_root,
+        agents_yaml=agents_yaml,
+        capabilities_yaml=capabilities_yaml,
+        gods=gods,
+        dispatchers=dispatchers,
+        routes=routes,
+        feed_base=feed_base,
+        agents_dir=agents_dir,
+        socket_path=socket_path,
+        create_pg_schema=create_pg_schema,
+        skip_bootstrap_hook=skip_bootstrap_hook,
+        force=force,
     )

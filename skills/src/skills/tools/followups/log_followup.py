@@ -5,7 +5,7 @@ Agent and the future interface agent don't. Add agent names to
 ``allowed_agents`` in registry.yaml as new consumers come online.
 """
 
-from agents.email_pm.tools import build_log_followup_tool
+from email_pm.tools import build_log_followup_tool
 
 TOOL_METADATA = {
     "id": "followups.log_followup",

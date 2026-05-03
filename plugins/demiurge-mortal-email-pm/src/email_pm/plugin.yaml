@@ -1,0 +1,19 @@
+name: email_pm
+kind: mortal
+display_name: Email PM
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+capabilities:
+  - gmail.send
+  - gmail.read
+  - gmail.draft
+  - gmail.label
+  - gmail.list_history
+  - gmail.get_message
+
+powers:
+  - gmail
+
+bootstrap: email_pm.bootstrap:hire

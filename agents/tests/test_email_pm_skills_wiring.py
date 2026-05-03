@@ -82,7 +82,7 @@ def test_sensitive_escalation_overrides_for_legal_email() -> None:
 
 
 def test_render_playbooks_block_injects_into_system_prompt() -> None:
-    from agents.email_pm.agent import _build_state_modifier
+    from email_pm.agent import _build_state_modifier
     from skills.playbooks.loader import load_playbook
     from pathlib import Path
 
@@ -102,7 +102,7 @@ def test_render_playbooks_block_injects_into_system_prompt() -> None:
 
 def test_no_match_returns_just_system_prompt() -> None:
     """Email PM with no matching playbook still gets the base system prompt."""
-    from agents.email_pm.agent import _build_state_modifier, SYSTEM_PROMPT
+    from email_pm.agent import _build_state_modifier, SYSTEM_PROMPT
 
     rendered = _build_state_modifier([])
     assert rendered == SYSTEM_PROMPT

@@ -22,7 +22,7 @@ from typing import Any, Dict, List
 import nacl.signing
 import pytest
 
-from agents.installer import agent as installer_agent
+from installer import agent as installer_agent
 from shared.events import (
     SystemDepAwaitingApprovalEvent,
     SystemDepInstalledEvent,

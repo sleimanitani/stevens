@@ -19,6 +19,8 @@ members = [
     "plugins/demiurge-power-calendar",
     "plugins/demiurge-power-whatsapp-cloud",
     "plugins/demiurge-power-signal",
+    "plugins/demiurge-mortal-email-pm",
+    "plugins/demiurge-mortal-installer",
 ]
 
 [tool.uv.sources]
@@ -30,3 +32,5 @@ skills = { workspace = true }
 "demiurge-power-calendar" = { workspace = true }
 "demiurge-power-whatsapp-cloud" = { workspace = true }
 "demiurge-power-signal" = { workspace = true }
+"demiurge-mortal-email-pm" = { workspace = true }
+"demiurge-mortal-installer" = { workspace = true }

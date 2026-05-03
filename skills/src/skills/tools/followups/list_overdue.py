@@ -1,6 +1,6 @@
 """skills wrapper — list overdue followups."""
 
-from agents.email_pm.tools import build_list_overdue_followups_tool
+from email_pm.tools import build_list_overdue_followups_tool
 
 TOOL_METADATA = {
     "id": "followups.list_overdue",

@@ -13,6 +13,8 @@ members = [
     "agents",
     "assistant",
     "demiurge",
+    "demiurge-mortal-email-pm",
+    "demiurge-mortal-installer",
     "demiurge-power-calendar",
     "demiurge-power-gmail",
     "demiurge-power-signal",
@@ -616,6 +618,42 @@ requires-dist = [
     { name = "shared", editable = "shared" },
 ]
 provides-extras = ["dev", "janus"]
+
+[[package]]
+name = "demiurge-mortal-email-pm"
+version = "1.0.0"
+source = { editable = "plugins/demiurge-mortal-email-pm" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "langgraph" },
+    { name = "pyyaml" },
+    { name = "shared" },
+    { name = "skills" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langchain-core", specifier = ">=0.3" },
+    { name = "langgraph", specifier = ">=0.2" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "shared", editable = "shared" },
+    { name = "skills", editable = "skills" },
+]
+
+[[package]]
+name = "demiurge-mortal-installer"
+version = "1.0.0"
+source = { editable = "plugins/demiurge-mortal-installer" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "shared" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "shared", editable = "shared" },
+]
 
 [[package]]
 name = "demiurge-power-calendar"

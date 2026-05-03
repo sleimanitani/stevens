@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from agents.installer import agent as installer_agent
-from agents.installer.plan_builder import PlanBuildError, build_apt_plan
+from installer import agent as installer_agent
+from installer.plan_builder import PlanBuildError, build_apt_plan
 from shared.events import SystemDepRequestedEvent
 from shared.security_client import (
     BlockedError,

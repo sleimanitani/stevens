@@ -1,0 +1,16 @@
+name: installer
+kind: mortal
+display_name: Installer
+version: "1.0.0"
+source: https://github.com/sleimanitani/stevens
+maintainer: Sol
+
+capabilities:
+  - system.read_environment
+  - system.plan_install
+  - system.execute_privileged
+  - system.write_inventory
+
+powers: []
+
+bootstrap: installer.bootstrap:hire
